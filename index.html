@@ -730,7 +730,11 @@
       background: linear-gradient(135deg, #F9F1F8 0%, #F1E4F0 100%);
       border-color: #D7BED4;
     }
-
+/* 9x9 FREEZER BOX GRID (PHASE 2) */
+    .box-grid-9x9 { display: grid; grid-template-columns: repeat(9, 1fr); gap: 6px; max-width: 540px; margin-top: 14px; }
+    .box-slot { aspect-ratio: 1; border-radius: 10px; border: 1.5px solid var(--card-border); background: #FAF5EE; display: flex; align-items: center; justify-content: center; font-size: 0.74rem; font-weight: 700; cursor: pointer; transition: all 0.14s; }
+    .box-slot:hover { border-color: var(--plum-accent); transform: scale(1.04); }
+    .box-slot.occupied { background: linear-gradient(135deg, #6D3B65, #4A2545); color: #FFF; border-color: #4A2545; }
     /* MODAL */
     .modal-backdrop {
       position: fixed;
@@ -880,6 +884,14 @@
           <path d="M12 2V5M12 19V22M2 12H5M19 12H22M4.9 4.9L7 7M17 17L19.1 19.1M19.1 4.9L17 7M7 17L4.9 19.1" stroke="#F4E9DF" stroke-width="1.8" stroke-linecap="round"/>
         </svg>
         Settings & Backup
+     <button class="nav-item" data-view="literature" onclick="switchView('literature', this)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <rect x="4" y="14" width="16" height="5" rx="1.5" fill="#D5A6BD" stroke="#4A2545" stroke-width="1.5"/>
+          <rect x="5" y="9" width="14" height="5" rx="1.5" fill="#A5C7A8" stroke="#4A2545" stroke-width="1.5"/>
+          <rect x="4" y="4" width="15" height="5" rx="1.5" fill="#E8C6A8" stroke="#4A2545" stroke-width="1.5"/>
+        </svg>
+        Literature
+      </button>
       </button>
     </nav>
 
@@ -1130,6 +1142,24 @@
 
         <div class="card">
           <div id="inventory-table-wrap"></div>
+        </div>
+      </section>
+
+      <!-- ==================== LITERATURE & PAPERS LIBRARY (PHASE 2) ==================== -->
+      <section id="view-literature" class="view-section">
+        <div class="page-header">
+          <h2 class="page-title">Literature & Papers</h2>
+          <div class="flex-gap">
+            <button class="btn" onclick="toggleAIDrawer('ask')">AI Paper Q&A</button>
+            <button class="btn btn-plum" onclick="openPaperModal()">+ Save Paper / DOI</button>
+          </div>
+        </div>
+        <div class="protocol-layout">
+          <div class="card">
+            <input type="text" class="input mb-2" placeholder="Search title, DOI, project..." oninput="renderPaperList(this.value)" />
+            <div id="paper-sidebar-list"></div>
+          </div>
+          <div class="card" id="paper-reader-panel"></div>
         </div>
       </section>
 
@@ -2859,6 +2889,144 @@
       await initDB();
       renderAll();
     });
+    /* ==================== PHASE 2 ADD-ON MODULE ==================== */
+    if (!appState.papers) appState.papers = [];
+    if (!appState.freezerBoxes) appState.freezerBoxes = [];
+    let selectedPaperId = null;
+    let selectedBoxId = null;
+
+    // 1. Literature Manager
+    function renderLiterature() {
+      if (!appState.papers) appState.papers = [];
+      renderPaperList();
+      const reader = document.getElementById('paper-reader-panel');
+      if (!reader) return;
+      const paper = appState.papers.find(p => p.id === selectedPaperId) || appState.papers[0];
+      if (!paper) {
+        reader.innerHTML = `<div class="empty-state"><h3 class="serif" style="color:var(--plum-dark);">Literature & Reference Papers</h3><p>Save papers with DOIs, project tags, abstracts, and research notes.</p><button class="btn btn-plum" onclick="openPaperModal()">+ Save First Paper</button></div>`;
+        return;
+      }
+      selectedPaperId = paper.id;
+      reader.innerHTML = `
+        <div class="flex-between mb-2">
+          <div class="flex-gap">
+            <span class="tag-pill">${escapeHTML(paper.project || 'General')}</span>
+            <span class="tag-pill tag-sage">${escapeHTML(paper.status || 'To Read')}</span>
+            ${paper.doi ? `<span class="tag-pill tag-sky">DOI: ${escapeHTML(paper.doi)}</span>` : ''}
+          </div>
+          <button class="btn btn-sm" style="color:var(--rose);" onclick="deletePaper('${paper.id}')">Delete</button>
+        </div>
+        <h3 class="serif" style="font-size:1.35rem;color:var(--plum-dark);margin-bottom:6px;">${escapeHTML(paper.title)}</h3>
+        <div style="font-size:0.83rem;color:var(--ink-muted);margin-bottom:14px;">${escapeHTML(paper.authors || '')}</div>
+        <div style="white-space:pre-wrap;line-height:1.65;font-size:0.9rem;background:#FAF5EE;padding:14px;border-radius:12px;border:1px solid #EAE0D5;">${escapeHTML(paper.notes || '')}</div>
+      `;
+    }
+
+    function renderPaperList(filter = '') {
+      const list = document.getElementById('paper-sidebar-list');
+      if (!list) return;
+      const q = filter.toLowerCase();
+      const filtered = (appState.papers || []).filter(p => p.title.toLowerCase().includes(q) || (p.project || '').toLowerCase().includes(q) || (p.doi || '').toLowerCase().includes(q));
+      list.innerHTML = filtered.length === 0 ? `<p style="font-size:0.83rem;color:var(--ink-muted);padding:10px 0;">No papers saved yet.</p>` : filtered.map(p => `
+        <div class="exp-mini-item" style="${p.id === selectedPaperId ? 'border-color:var(--plum-accent);background:#EFE3ED;' : ''}" onclick="selectedPaperId='${p.id}';renderLiterature()">
+          <div style="font-weight:700;font-size:0.9rem;">${escapeHTML(p.title)}</div>
+          <div style="font-size:0.76rem;color:var(--ink-muted);">${escapeHTML(p.project || 'General')} · ${escapeHTML(p.status)}</div>
+        </div>
+      `).join('');
+    }
+
+    function openPaperModal() {
+      openModal(`
+        <h3 class="serif mb-2" style="color:var(--plum-dark);">Save Research Paper</h3>
+        <label>Paper Title</label><input type="text" id="pap-title-in" class="input mb-2" />
+        <div class="grid-2 mb-2">
+          <div><label>Authors & Year</label><input type="text" id="pap-auth-in" class="input" /></div>
+          <div><label>DOI / PMID</label><input type="text" id="pap-doi-in" class="input" /></div>
+        </div>
+        <div class="grid-2 mb-2">
+          <div><label>Project Tag</label><input type="text" id="pap-proj-in" class="input" /></div>
+          <div><label>Status</label><select id="pap-stat-in" class="input"><option value="To Read">To Read</option><option value="Reading">Reading</option><option value="Summarized">Summarized</option></select></div>
+        </div>
+        <label>Abstract & Key Notes</label><textarea id="pap-notes-in" rows="5" class="input mb-3"></textarea>
+        <div class="flex-gap" style="justify-content:flex-end;"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-plum" onclick="savePaper()">Save Paper</button></div>
+      `);
+    }
+
+    function savePaper() {
+      const title = document.getElementById('pap-title-in').value.trim();
+      if (!title) return;
+      if (!appState.papers) appState.papers = [];
+      const p = { id: String(Date.now()), title, authors: document.getElementById('pap-auth-in').value.trim(), doi: document.getElementById('pap-doi-in').value.trim(), project: document.getElementById('pap-proj-in').value.trim() || 'General', status: document.getElementById('pap-stat-in').value, notes: document.getElementById('pap-notes-in').value.trim() };
+      appState.papers.unshift(p);
+      selectedPaperId = p.id;
+      saveState(); logActivity('Literature', `Saved "${title}"`); closeModal(); renderLiterature();
+    }
+
+    function deletePaper(id) {
+      appState.papers = appState.papers.filter(p => p.id !== id);
+      selectedPaperId = null; saveState(); renderLiterature();
+    }
+
+    // 2. Freezer 9x9 Box Map inside Inventory
+    const _origRenderInventory = renderInventory;
+    renderInventory = function() {
+      _origRenderInventory();
+      const invSection = document.getElementById('view-inventory');
+      if (!invSection) return;
+      let boxPanel = document.getElementById('freezer-box-panel');
+      if (!boxPanel) {
+        boxPanel = document.createElement('div');
+        boxPanel.id = 'freezer-box-panel';
+        boxPanel.className = 'card mt-3';
+        invSection.appendChild(boxPanel);
+      }
+      if (!appState.freezerBoxes) appState.freezerBoxes = [];
+      if (appState.freezerBoxes.length === 0) {
+        boxPanel.innerHTML = `<div class="flex-between"><h3 class="card-title">9×9 Freezer Storage Boxes</h3><button class="btn btn-plum btn-sm" onclick="openNewBoxModal()">+ Create 9×9 Box</button></div><p style="font-size:0.84rem;color:var(--ink-muted);margin-top:6px;">Map individual tube slots (A1–I9) for plasmids, primers, and stocks.</p>`;
+        return;
+      }
+      const box = appState.freezerBoxes.find(b => b.id === selectedBoxId) || appState.freezerBoxes[0];
+      selectedBoxId = box.id;
+      const rows = ['A','B','C','D','E','F','G','H','I'];
+      let slotsHTML = '';
+      for (let r = 0; r < 9; r++) {
+        for (let c = 1; c <= 9; c++) {
+          const coord = `${rows[r]}${c}`;
+          const label = (box.slots && box.slots[coord]) || '';
+          slotsHTML += `<div class="box-slot ${label ? 'occupied' : ''}" title="${coord}${label ? ': ' + escapeHTML(label) : ' (Empty)'}" onclick="editBoxSlot('${box.id}', '${coord}')">${coord}</div>`;
+        }
+      }
+      boxPanel.innerHTML = `
+        <div class="flex-between mb-2">
+          <div class="flex-gap">${appState.freezerBoxes.map(b => `<button class="btn btn-sm ${b.id === box.id ? 'btn-plum' : ''}" onclick="selectedBoxId='${b.id}';renderInventory()">${escapeHTML(b.name)}</button>`).join('')}</div>
+          <button class="btn btn-plum btn-sm" onclick="openNewBoxModal()">+ New Box</button>
+        </div>
+        <div style="font-size:0.82rem;color:var(--ink-muted);">${escapeHTML(box.temp)} · Click any slot to assign or clear a tube.</div>
+        <div class="box-grid-9x9">${slotsHTML}</div>
+      `;
+    };
+
+    function openNewBoxModal() {
+      openModal(`<h3 class="serif mb-2" style="color:var(--plum-dark);">Create 9×9 Freezer Box</h3><label>Box Name</label><input type="text" id="box-name-in" class="input mb-2" placeholder="e.g., Plasmids Box 1" /><label>Freezer / Rack</label><input type="text" id="box-temp-in" class="input mb-3" value="-20°C Freezer, Rack A" /><div class="flex-gap" style="justify-content:flex-end;"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-plum" onclick="createFreezerBox()">Create</button></div>`);
+    }
+    function createFreezerBox() {
+      const name = document.getElementById('box-name-in').value.trim();
+      if (!name) return;
+      appState.freezerBoxes.push({ id: String(Date.now()), name, temp: document.getElementById('box-temp-in').value.trim(), slots: {} });
+      saveState(); closeModal(); renderInventory();
+    }
+    function editBoxSlot(boxId, coord) {
+      const box = appState.freezerBoxes.find(b => b.id === boxId);
+      if (!box) return;
+      if (!box.slots) box.slots = {};
+      const next = prompt(`Slot ${coord} label (blank to clear):`, box.slots[coord] || '');
+      if (next === null) return;
+      if (next.trim()) box.slots[coord] = next.trim(); else delete box.slots[coord];
+      saveState(); renderInventory();
+    }
+
+    const _origRenderAll = renderAll;
+    renderAll = function() { _origRenderAll(); renderLiterature(); };
   </script>
 </body>
 </html>
