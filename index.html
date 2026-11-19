@@ -811,6 +811,13 @@
         </svg>
         Home
       </button>
+      <button class="nav-item" data-view="projects" onclick="switchView('projects', this)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M3 6C3 4.9 3.9 4 5 4H9.5L11.5 6.5H19C20.1 6.5 21 7.4 21 8.5V18C21 19.1 20.1 20 19 20H5C3.9 20 3 19.1 3 18V6Z" fill="#E8C6A8" stroke="#4A2545" stroke-width="1.6"/>
+          <path d="M8 12H16M8 15.5H13" stroke="#6D3B65" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        Projects
+      </button>
 
       <button class="nav-item" data-view="protocols" onclick="switchView('protocols', this)">
         <!-- Custom Open Protocol Book Icon -->
@@ -1041,6 +1048,15 @@
         </div>
       </section>
 
+      <!-- ==================== PROJECTS HUB ==================== -->
+      <section id="view-projects" class="view-section">
+        <div class="page-header">
+          <h2 class="page-title">Projects Hub</h2>
+          <button class="btn btn-plum" onclick="openNewProjectModal()">+ New Project</button>
+        </div>
+        <div class="grid-3 mb-3" id="projects-cards-grid"></div>
+        <div id="project-detail-workspace"></div>
+      </section>
       <!-- ==================== 2. PROTOCOLS FLOWCHART STUDIO ==================== -->
       <section id="view-protocols" class="view-section">
         <div class="page-header">
@@ -3027,6 +3043,169 @@
 
     const _origRenderAll = renderAll;
     renderAll = function() { _origRenderAll(); renderLiterature(); };
+ /* ==================== PROJECTS HUB MODULE ==================== */
+    if (!appState.projects) appState.projects = [];
+    let selectedProjectName = null;
+
+    function getAllProjectNames() {
+      const set = new Set(appState.projects.map(p => p.name));
+      appState.experiments.forEach(e => { if (e.project) set.add(e.project); });
+      appState.protocols.forEach(p => { if (p.tag) set.add(p.tag); });
+      appState.notes.forEach(n => { if (n.tag) set.add(n.tag); });
+      if (appState.papers) appState.papers.forEach(p => { if (p.project) set.add(p.project); });
+      return Array.from(set);
+    }
+
+    function renderProjects() {
+      const grid = document.getElementById('projects-cards-grid');
+      const detail = document.getElementById('project-detail-workspace');
+      if (!grid || !detail) return;
+
+      const names = getAllProjectNames();
+      if (names.length === 0) {
+        grid.innerHTML = '';
+        detail.innerHTML = `
+          <div class="empty-state">
+            <h3 class="serif" style="color:var(--plum-dark);">No Projects Created Yet</h3>
+            <p>Create a project workspace to group related protocols, active runs, notebook entries, and papers together.</p>
+            <button class="btn btn-plum" onclick="openNewProjectModal()">+ Create First Project</button>
+          </div>`;
+        return;
+      }
+
+      if (!selectedProjectName || !names.includes(selectedProjectName)) {
+        selectedProjectName = names[0];
+      }
+
+      grid.innerHTML = names.map(name => {
+        const meta = appState.projects.find(p => p.name === name) || { name, description: '', status: 'Active' };
+        const expCount = appState.experiments.filter(e => e.project === name).length;
+        const protoCount = appState.protocols.filter(p => p.tag === name).length;
+        const noteCount = appState.notes.filter(n => n.tag === name).length;
+
+        return `
+          <div class="card" style="cursor:pointer;${name === selectedProjectName ? 'border:2px solid var(--plum-accent);' : ''}"
+               onclick="selectedProjectName='${escapeHTML(name)}';renderProjects()">
+            <div class="flex-between">
+              <h3 class="serif" style="font-size:1.2rem;color:var(--plum-dark);">${escapeHTML(name)}</h3>
+              <span class="tag-pill tag-sage">${escapeHTML(meta.status || 'Active')}</span>
+            </div>
+            ${meta.description ? `<p style="font-size:0.82rem;color:var(--ink-muted);margin-top:6px;">${escapeHTML(meta.description)}</p>` : ''}
+            <div class="flex-gap mt-3" style="font-size:0.78rem;">
+              <span class="tag-pill">${expCount} Runs</span>
+              <span class="tag-pill tag-sky">${protoCount} Protocols</span>
+              <span class="tag-pill tag-amber">${noteCount} Notes</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const exps = appState.experiments.filter(e => e.project === selectedProjectName);
+      const protos = appState.protocols.filter(p => p.tag === selectedProjectName);
+      const notes = appState.notes.filter(n => n.tag === selectedProjectName);
+      const papers = (appState.papers || []).filter(p => p.project === selectedProjectName);
+
+      detail.innerHTML = `
+        <div class="card">
+          <div class="flex-between mb-3">
+            <h3 class="serif" style="font-size:1.35rem;color:var(--plum-dark);">Project: ${escapeHTML(selectedProjectName)}</h3>
+            <div class="flex-gap">
+              <button class="btn btn-sm" onclick="quickStartInProject('${escapeHTML(selectedProjectName)}', 'protocol')">+ Protocol in Project</button>
+              <button class="btn btn-plum btn-sm" onclick="quickStartInProject('${escapeHTML(selectedProjectName)}', 'experiment')">+ Experiment in Project</button>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="step-card">
+              <strong style="color:var(--plum-dark);">Linked Experiments (${exps.length})</strong>
+              ${exps.length === 0 ? `<p style="font-size:0.83rem;color:var(--ink-muted);margin-top:6px;">None yet.</p>` : exps.map(e => `
+                <div class="exp-mini-item mt-2" onclick="selectedExperimentId='${e.id}';switchView('experiments')">
+                  <div class="flex-between"><strong>${escapeHTML(e.title)}</strong><span class="tag-pill">${e.status}</span></div>
+                </div>
+              `).join('')}
+            </div>
+
+            <div class="step-card">
+              <strong style="color:var(--plum-dark);">Linked Protocols (${protos.length})</strong>
+              ${protos.length === 0 ? `<p style="font-size:0.83rem;color:var(--ink-muted);margin-top:6px;">None yet.</p>` : protos.map(p => `
+                <div class="exp-mini-item mt-2" onclick="selectedProtocolId='${p.id}';switchView('protocols')">
+                  <div class="flex-between"><strong>${escapeHTML(p.title)}</strong><span>${p.nodes.length} steps</span></div>
+                </div>
+              `).join('')}
+            </div>
+
+            <div class="step-card">
+              <strong style="color:var(--plum-dark);">Notebook Entries (${notes.length})</strong>
+              ${notes.length === 0 ? `<p style="font-size:0.83rem;color:var(--ink-muted);margin-top:6px;">None yet.</p>` : notes.map(n => `
+                <div class="exp-mini-item mt-2" onclick="selectedNoteId='${n.id}';switchView('notebook')">
+                  <strong>${escapeHTML(n.title)}</strong> <span style="font-size:0.76rem;color:var(--ink-muted);">(${n.date})</span>
+                </div>
+              `).join('')}
+            </div>
+
+            <div class="step-card">
+              <strong style="color:var(--plum-dark);">Reference Papers (${papers.length})</strong>
+              ${papers.length === 0 ? `<p style="font-size:0.83rem;color:var(--ink-muted);margin-top:6px;">None yet.</p>` : papers.map(p => `
+                <div class="exp-mini-item mt-2" onclick="selectedPaperId='${p.id}';switchView('literature')">
+                  <strong>${escapeHTML(p.title)}</strong>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function openNewProjectModal() {
+      openModal(`
+        <h3 class="serif mb-2" style="color:var(--plum-dark);">Create Research Project</h3>
+        <label>Project Name / Short Code</label>
+        <input type="text" id="prj-name-in" class="input mb-2" placeholder="e.g., KFDV NS5, HBV NTCP, Review Paper" />
+        <label>Objective / Summary (optional)</label>
+        <textarea id="prj-desc-in" rows="3" class="input mb-2" placeholder="Brief goal of this project..."></textarea>
+        <label>Status</label>
+        <select id="prj-stat-in" class="input mb-3">
+          <option value="Active">Active</option>
+          <option value="Manuscript Prep">Manuscript Prep</option>
+          <option value="On Hold">On Hold</option>
+          <option value="Completed">Completed</option>
+        </select>
+        <div class="flex-gap" style="justify-content:flex-end;">
+          <button class="btn" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-plum" onclick="saveNewProject()">Create Project</button>
+        </div>
+      `);
+    }
+
+    function saveNewProject() {
+      const name = document.getElementById('prj-name-in').value.trim();
+      if (!name) return;
+      if (!appState.projects) appState.projects = [];
+      appState.projects.unshift({
+        id: String(Date.now()),
+        name,
+        description: document.getElementById('prj-desc-in').value.trim(),
+        status: document.getElementById('prj-stat-in').value
+      });
+      selectedProjectName = name;
+      saveState();
+      logActivity('Project', `Created project "${name}"`);
+      closeModal();
+      renderProjects();
+    }
+
+    function quickStartInProject(projName, kind) {
+      if (kind === 'protocol') {
+        openNewProtocolModal();
+        setTimeout(() => { const el = document.getElementById('proto-tag-in'); if (el) el.value = projName; }, 30);
+      } else {
+        openNewExperimentModal();
+        setTimeout(() => { const el = document.getElementById('exp-proj-in'); if (el) el.value = projName; }, 30);
+      }
+    }
+
+    const _prevRenderAllProj = renderAll;
+    renderAll = function() { _prevRenderAllProj(); renderProjects(); };
   </script>
 </body>
 </html>
