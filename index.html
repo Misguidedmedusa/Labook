@@ -2794,7 +2794,7 @@ async function runAIAssistant() {
       const labContext = JSON.stringify({
         projects: (appState.projects || []).map(p => ({ name: p.name, status: p.status, description: p.description })),
         protocols: appState.protocols.map(p => ({ title: p.title, tag: p.tag, steps: p.nodes.map(n => n.title) })),
-        experiments: appState.experiments.slice(0, 5),
+        experiments: appState.experiments.slice(0, 5).map(e => ({ title: e.title, project: e.project, status: e.status, steps: (e.steps || []).map(s => ({ title: s.title, done: s.done, note: s.note })) })),
         notes: appState.notes.slice(0, 5).map(n => ({ title: n.title, date: n.date, body: n.body })),
         reagents: appState.reagents.map(r => ({ name: r.name, qty: r.qty, location: r.location }))
       });
