@@ -1,0 +1,2864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Labook — Research Workspace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --plum-dark: #331830;
+      --plum-mid: #4A2545;
+      --plum-accent: #6D3B65;
+      --plum-hover: #582E52;
+      --plum-soft: #EFE3ED;
+      --parchment-bg: #FAF5EE;
+      --parchment-deep: #F3EAE0;
+      --card-bg: #FFFDF9;
+      --card-border: #E5D9CC;
+      --ink-primary: #2B1B28;
+      --ink-muted: #6E5D6B;
+      --sage: #6F9173;
+      --sage-soft: #E5EFE6;
+      --amber: #C48234;
+      --amber-soft: #FBF0DF;
+      --rose: #B85258;
+      --rose-soft: #FBE8E9;
+      --sky: #558496;
+      --sky-soft: #E5F0F4;
+      --shadow-soft: 0 6px 20px rgba(51, 24, 48, 0.06);
+      --shadow-card: 0 3px 12px rgba(51, 24, 48, 0.05);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--parchment-bg);
+      background-image:
+        radial-gradient(circle at 18% 12%, rgba(212, 180, 205, 0.24) 0%, transparent 42%),
+        radial-gradient(circle at 86% 24%, rgba(182, 206, 186, 0.22) 0%, transparent 45%),
+        radial-gradient(circle at 75% 88%, rgba(226, 194, 172, 0.24) 0%, transparent 48%),
+        radial-gradient(circle at 28% 82%, rgba(205, 182, 210, 0.18) 0%, transparent 40%);
+      color: var(--ink-primary);
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, .serif { font-family: 'Lora', Georgia, serif; }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 248px;
+      flex-shrink: 0;
+      background: linear-gradient(180deg, #4A2545 0%, #381B34 55%, #2D1429 100%);
+      color: #F8F1EA;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 16px;
+      position: relative;
+      box-shadow: 4px 0 24px rgba(45, 20, 41, 0.16);
+      z-index: 20;
+    }
+
+    .sidebar::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 20% 25%, rgba(235, 195, 225, 0.12), transparent 50%),
+        radial-gradient(circle at 80% 78%, rgba(190, 140, 180, 0.14), transparent 55%);
+      pointer-events: none;
+    }
+
+    .brand-patch {
+      background: linear-gradient(135deg, #FDF8F1 0%, #F3E7D8 100%);
+      border-radius: 16px;
+      padding: 14px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--plum-dark);
+      box-shadow: 0 6px 16px rgba(20, 8, 18, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      margin-bottom: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .brand-patch h1 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      line-height: 1.1;
+      color: var(--plum-dark);
+    }
+
+    .brand-patch span {
+      font-size: 0.74rem;
+      color: var(--ink-muted);
+      display: block;
+      margin-top: 2px;
+    }
+
+    .nav-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+      z-index: 1;
+      flex: 1;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      border: none;
+      background: transparent;
+      color: #F4E9DF;
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      text-align: left;
+      width: 100%;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 248, 240, 0.12);
+    }
+
+    .nav-item.active {
+      background: linear-gradient(135deg, #FBF5EC 0%, #F1E4D4 100%);
+      color: var(--plum-dark);
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(20, 8, 18, 0.22);
+    }
+
+    .nav-badge {
+      margin-left: auto;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(255, 248, 240, 0.18);
+      color: #FFF;
+    }
+
+    .nav-item.active .nav-badge {
+      background: var(--plum-soft);
+      color: var(--plum-dark);
+    }
+
+    .sidebar-botanical {
+      margin-top: auto;
+      padding-top: 12px;
+      opacity: 0.85;
+      pointer-events: none;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* MAIN SHELL */
+    .main-shell {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      position: relative;
+    }
+
+    /* TOP BAR */
+    .topbar {
+      min-height: 64px;
+      padding: 12px 28px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border-bottom: 1px solid rgba(229, 217, 204, 0.7);
+      background: rgba(250, 245, 238, 0.85);
+      backdrop-filter: blur(8px);
+      position: sticky;
+      top: 0;
+      z-index: 15;
+      flex-wrap: wrap;
+    }
+
+    .search-pill {
+      flex: 1;
+      min-width: 240px;
+      max-width: 440px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 999px;
+      padding: 8px 16px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .search-pill input {
+      border: none;
+      background: transparent;
+      outline: none;
+      width: 100%;
+      font-family: inherit;
+      font-size: 0.88rem;
+      color: var(--ink-primary);
+    }
+
+    .timer-dock {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .timer-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: var(--sage-soft);
+      color: #2E4B32;
+      border: 1px solid #C8DEC9;
+    }
+
+    .timer-pill.running {
+      background: var(--sky-soft);
+      color: #234958;
+      border-color: #BFD8E2;
+    }
+
+    .timer-pill button {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-weight: 700;
+      color: inherit;
+      font-size: 0.82rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 9px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+      background: var(--card-bg);
+      color: var(--ink-primary);
+      font-family: inherit;
+      font-size: 0.86rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.16s ease;
+      box-shadow: var(--shadow-card);
+    }
+
+    .btn:hover { background: var(--parchment-deep); transform: translateY(-1px); }
+
+    .btn-plum {
+      background: linear-gradient(135deg, #6D3B65 0%, #4A2545 100%);
+      color: #FFFBF7;
+      border-color: #4A2545;
+    }
+
+    .btn-plum:hover { background: linear-gradient(135deg, #5B3054 0%, #3A1B36 100%); }
+
+    .btn-sage {
+      background: var(--sage-soft);
+      color: #27442B;
+      border-color: #C3DBC5;
+    }
+
+    .btn-sm { padding: 6px 11px; font-size: 0.8rem; border-radius: 9px; }
+
+    /* WORKSPACE CONTENT */
+    .workspace {
+      padding: 24px 28px 40px;
+      max-width: 1460px;
+      width: 100%;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .page-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--plum-dark);
+      letter-spacing: -0.01em;
+    }
+
+    .view-section { display: none; }
+    .view-section.active { display: block; }
+
+    /* PARCHMENT CARDS */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 18px 20px;
+      box-shadow: var(--shadow-soft);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-wash-plum::after {
+      content: "";
+      position: absolute;
+      top: -30px; right: -30px;
+      width: 140px; height: 140px;
+      background: radial-gradient(circle, rgba(190, 145, 182, 0.22) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .card-wash-sage::after {
+      content: "";
+      position: absolute;
+      bottom: -30px; right: -20px;
+      width: 140px; height: 140px;
+      background: radial-gradient(circle, rgba(145, 182, 150, 0.22) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .card-title {
+      font-family: 'Lora', serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--plum-dark);
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    /* QUICK ACTION ROW */
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .quick-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 15px 18px;
+      border-radius: 16px;
+      border: 1px solid var(--card-border);
+      background: linear-gradient(135deg, #FFFDF9 0%, #F7EFE5 100%);
+      cursor: pointer;
+      transition: all 0.18s ease;
+      box-shadow: var(--shadow-card);
+      text-align: left;
+    }
+
+    .quick-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-soft); }
+
+    .quick-card.primary {
+      background: linear-gradient(135deg, #6D3B65 0%, #4A2545 100%);
+      color: #FFFBF7;
+      border-color: #4A2545;
+    }
+
+    .quick-card-label {
+      font-family: 'Lora', serif;
+      font-size: 1.02rem;
+      font-weight: 600;
+      flex: 1;
+    }
+
+    /* HOME 3-COLUMN BENTO */
+    .home-bento {
+      display: grid;
+      grid-template-columns: 1.35fr 1fr 0.95fr;
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+
+    .exp-mini-item {
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #FAF5EE;
+      border: 1px solid #EAE0D5;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .exp-mini-item:hover { background: #F4ECE1; }
+
+    .progress-track {
+      height: 7px;
+      background: #E8DDD0;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #8B5482, #4A2545);
+      border-radius: 999px;
+    }
+
+    .tag-pill {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 999px;
+      background: var(--plum-soft);
+      color: var(--plum-dark);
+    }
+
+    .tag-sage { background: var(--sage-soft); color: #2B4B2F; }
+    .tag-amber { background: var(--amber-soft); color: #6B4414; }
+    .tag-rose { background: var(--rose-soft); color: #6E2328; }
+    .tag-sky { background: var(--sky-soft); color: #1F4757; }
+
+    /* TODO LIST */
+    .todo-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 4px;
+      border-bottom: 1px dashed #EAE0D5;
+      font-size: 0.9rem;
+    }
+
+    .todo-item input[type="checkbox"] {
+      width: 17px;
+      height: 17px;
+      accent-color: var(--plum-accent);
+      cursor: pointer;
+    }
+
+    .todo-item.done span {
+      text-decoration: line-through;
+      color: var(--ink-muted);
+    }
+
+    /* CALENDAR */
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      text-align: center;
+      font-size: 0.8rem;
+    }
+
+    .cal-head {
+      font-weight: 700;
+      color: var(--ink-muted);
+      padding-bottom: 6px;
+      font-size: 0.74rem;
+    }
+
+    .cal-day {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      cursor: pointer;
+      position: relative;
+      font-weight: 500;
+    }
+
+    .cal-day:hover { background: var(--plum-soft); }
+    .cal-day.today { background: var(--plum-accent); color: #FFF; font-weight: 700; }
+
+    .cal-dots {
+      display: flex;
+      gap: 2px;
+      margin-top: 2px;
+    }
+
+    .cal-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+    }
+
+    /* RECENT ACTIVITY BAR */
+    .activity-strip {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .activity-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 12px;
+      border-radius: 12px;
+      background: #FAF5EE;
+      border: 1px solid #EAE0D5;
+      font-size: 0.83rem;
+    }
+
+    /* PROTOCOLS FLOWCHART STUDIO */
+    .protocol-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .flow-canvas {
+      min-height: 520px;
+      background-color: #FFFDF9;
+      background-image:
+        linear-gradient(to right, rgba(215, 200, 185, 0.32) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(215, 200, 185, 0.32) 1px, transparent 1px);
+      background-size: 24px 24px;
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .flow-node {
+      background: #FFFDF9;
+      border: 2px solid #C9B6C5;
+      border-radius: 14px;
+      padding: 14px 16px;
+      max-width: 540px;
+      margin: 0 auto;
+      box-shadow: 0 4px 12px rgba(51, 24, 48, 0.06);
+      position: relative;
+    }
+
+    .flow-node.decision {
+      border-color: var(--amber);
+      background: linear-gradient(135deg, #FFFDF9 0%, #FDF4E7 100%);
+      border-style: dashed;
+    }
+
+    .flow-node.hold {
+      border-color: var(--sage);
+      background: linear-gradient(135deg, #FFFDF9 0%, #EFF6F0 100%);
+      border-radius: 26px;
+    }
+
+    .flow-connector {
+      width: 2px;
+      height: 26px;
+      background: var(--plum-accent);
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .flow-connector::after {
+      content: "▼";
+      position: absolute;
+      bottom: -8px;
+      left: -5px;
+      font-size: 10px;
+      color: var(--plum-accent);
+    }
+
+    /* EXPERIMENTS SPLIT */
+    .exp-split {
+      display: grid;
+      grid-template-columns: 1.45fr 0.85fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .step-card {
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid var(--card-border);
+      margin-bottom: 12px;
+      background: #FFFDF9;
+    }
+
+    .step-card.completed {
+      background: #F4F9F4;
+      border-color: #C7DEC9;
+    }
+
+    .step-card.current {
+      background: linear-gradient(135deg, #F8EFF7 0%, #EFE1ED 100%);
+      border: 2px solid var(--plum-accent);
+    }
+
+    /* FORMS & INPUTS */
+    .input, select, textarea {
+      width: 100%;
+      padding: 9px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--card-border);
+      background: #FFFDF9;
+      font-family: inherit;
+      font-size: 0.88rem;
+      color: var(--ink-primary);
+      outline: none;
+    }
+
+    .input:focus, select:focus, textarea:focus {
+      border-color: var(--plum-accent);
+      box-shadow: 0 0 0 3px rgba(109, 59, 101, 0.12);
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--ink-muted);
+      margin-bottom: 4px;
+    }
+
+    /* TABLES */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+
+    th {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 2px solid var(--card-border);
+      color: var(--plum-dark);
+      font-family: 'Lora', serif;
+      font-size: 0.92rem;
+    }
+
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #EFE6DC;
+      vertical-align: middle;
+    }
+
+    /* AI SLIDE-OVER DRAWER */
+    .ai-drawer {
+      position: fixed;
+      top: 0;
+      right: -440px;
+      width: 420px;
+      max-width: 95vw;
+      height: 100vh;
+      background: linear-gradient(180deg, #FDF8F1 0%, #F5ECE1 100%);
+      border-left: 1px solid var(--card-border);
+      box-shadow: -8px 0 32px rgba(45, 20, 41, 0.18);
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      transition: right 0.25s ease;
+    }
+
+    .ai-drawer.open { right: 0; }
+
+    .ai-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin: 14px 0;
+    }
+
+    .ai-tab-btn {
+      padding: 7px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--card-border);
+      background: #FFFDF9;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .ai-tab-btn.active {
+      background: var(--plum-accent);
+      color: #FFF;
+      border-color: var(--plum-accent);
+    }
+
+    .ai-feed {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-right: 4px;
+      margin-bottom: 12px;
+    }
+
+    .ai-msg-box {
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #FFFDF9;
+      border: 1px solid var(--card-border);
+      font-size: 0.85rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .ai-msg-box.suggestion {
+      background: linear-gradient(135deg, #F9F1F8 0%, #F1E4F0 100%);
+      border-color: #D7BED4;
+    }
+
+    /* MODAL */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(35, 16, 32, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 60;
+      padding: 20px;
+    }
+
+    .modal-backdrop.open { display: flex; }
+
+    .modal-box {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 24px;
+      width: 100%;
+      max-width: 560px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 48px rgba(35, 16, 32, 0.25);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 36px 20px;
+      color: var(--ink-muted);
+      border: 1.5px dashed #D8C9BA;
+      border-radius: 16px;
+      background: rgba(255, 253, 249, 0.6);
+    }
+
+    .empty-state p { margin: 8px 0 14px; font-size: 0.9rem; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .mt-2 { margin-top: 8px; }
+    .mt-3 { margin-top: 14px; }
+    .mb-2 { margin-bottom: 8px; }
+    .mb-3 { margin-bottom: 14px; }
+    .flex-between { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .flex-gap { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+
+  <!-- LEFT PLUM SIDEBAR WITH CUSTOM WATERCOLOR LAB SVG ICONS -->
+  <aside class="sidebar">
+    <div class="brand-patch">
+      <!-- Custom Erlenmeyer Flask + Botanical Leaf SVG -->
+      <svg width="42" height="42" viewBox="0 0 48 48" fill="none">
+        <path d="M12 18C7 14 6 8 10 5C14 8 15 14 12 18Z" fill="#8FB393"/>
+        <path d="M16 16C14 11 17 6 21 5C22 10 19 14 16 16Z" fill="#B6CFAF"/>
+        <path d="M21 12H29V15H27V21L36 37C37 39 35.5 41 33.2 41H16.8C14.5 41 13 39 14 37L23 21V15H21V12Z" fill="#F8F3EE" stroke="#4A2545" stroke-width="2"/>
+        <path d="M16.5 33L14.5 37C13.8 38.4 14.8 40 16.4 40H33.6C35.2 40 36.2 38.4 35.5 37L33.5 33H16.5Z" fill="#C78EC0"/>
+        <circle cx="22" cy="36" r="1.5" fill="#FFF"/>
+        <circle cx="28" cy="35" r="1.2" fill="#FFF"/>
+      </svg>
+      <div>
+        <h1>Labook</h1>
+        <span>Research Workspace</span>
+      </div>
+    </div>
+
+    <nav class="nav-list">
+      <button class="nav-item active" data-view="home" onclick="switchView('home', this)">
+        <!-- Custom Cottage/Lab Home Icon -->
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M3 10.5L12 3L21 10.5V20C21 20.6 20.6 21 20 21H4C3.4 21 3 20.6 3 20V10.5Z" fill="#E8C6A8" stroke="#4A2545" stroke-width="1.6"/>
+          <path d="M9 21V13H15V21" fill="#C88B9E" stroke="#4A2545" stroke-width="1.6"/>
+        </svg>
+        Home
+      </button>
+
+      <button class="nav-item" data-view="protocols" onclick="switchView('protocols', this)">
+        <!-- Custom Open Protocol Book Icon -->
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M2 5C5 4 9 4.5 12 6.5C15 4.5 19 4 22 5V19C19 18 15 18.5 12 20.5C9 18.5 5 18 2 19V5Z" fill="#F6E6D5" stroke="#4A2545" stroke-width="1.6"/>
+          <path d="M12 6.5V20.5" stroke="#4A2545" stroke-width="1.6"/>
+          <path d="M5 9H9M5 12H9M15 9H19M15 12H19" stroke="#8B5482" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Protocols
+      </button>
+
+      <button class="nav-item" data-view="experiments" onclick="switchView('experiments', this)">
+        <!-- Custom Microcentrifuge Tube Rack Icon -->
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="8" width="18" height="11" rx="2" fill="#E5D4E3" stroke="#4A2545" stroke-width="1.5"/>
+          <rect x="6" y="4" width="3" height="13" rx="1.5" fill="#9AC4CE" stroke="#4A2545" stroke-width="1.4"/>
+          <rect x="10.5" y="4" width="3" height="13" rx="1.5" fill="#D595B4" stroke="#4A2545" stroke-width="1.4"/>
+          <rect x="15" y="4" width="3" height="13" rx="1.5" fill="#A5C7A8" stroke="#4A2545" stroke-width="1.4"/>
+        </svg>
+        Experiments
+        <span class="nav-badge" id="nav-exp-count">0</span>
+      </button>
+
+      <button class="nav-item" data-view="toolbox" onclick="switchView('toolbox', this)">
+        <!-- Custom Bar Chart / Data Lab Icon -->
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="12" width="4" height="8" rx="1" fill="#C9A0C4" stroke="#4A2545" stroke-width="1.5"/>
+          <rect x="10" y="7" width="4" height="13" rx="1" fill="#95C1B5" stroke="#4A2545" stroke-width="1.5"/>
+          <rect x="17" y="4" width="4" height="16" rx="1" fill="#E5B78A" stroke="#4A2545" stroke-width="1.5"/>
+        </svg>
+        Data Toolbox
+      </button>
+
+      <button class="nav-item" data-view="culture" onclick="switchView('culture', this)">
+        <!-- Custom Petri Dish & Cells Icon -->
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <ellipse cx="12" cy="13" rx="9" ry="6.5" fill="#F2D4DC" stroke="#4A2545" stroke-width="1.6"/>
+          <ellipse cx="12" cy="11.5" rx="9" ry="5.5" fill="#F9E8EC" stroke="#4A2545" stroke-width="1.5"/>
+          <circle cx="9.5" cy="11.5" r="1.4" fill="#A85C7E"/>
+          <circle cx="14.5" cy="10.5" r="1.2" fill="#A85C7E"/>
+          <circle cx="12.5" cy="13.2" r="1.1" fill="#A85C7E"/>
+        </svg>
+        Cell Culture
+      </button>
+
+      <button class="nav-item" data-view="notebook" onclick="switchView('notebook', this)">
+        <!-- Custom Spiral Lab Notebook Icon -->
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <rect x="5" y="3" width="15" height="18" rx="2.5" fill="#F6E7D8" stroke="#4A2545" stroke-width="1.6"/>
+          <path d="M3 7H6M3 11H6M3 15H6M3 19H6" stroke="#4A2545" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M9 8H16M9 12H16M9 16H13" stroke="#8B5482" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        Notebook
+      </button>
+
+      <button class="nav-item" data-view="inventory" onclick="switchView('inventory', this)">
+        <!-- Custom Reagent Bottle Icon -->
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <rect x="9" y="3" width="6" height="3" rx="1" fill="#D5C2B4" stroke="#4A2545" stroke-width="1.5"/>
+          <path d="M7 9C7 7.9 7.9 7 9 7H15C16.1 7 17 7.9 17 9V19C17 20.1 16.1 21 15 21H9C7.9 21 7 20.1 7 19V9Z" fill="#DFC3D9" stroke="#4A2545" stroke-width="1.6"/>
+          <rect x="9" y="11" width="6" height="5" rx="1" fill="#FFFDF9" stroke="#4A2545" stroke-width="1.2"/>
+        </svg>
+        Inventory
+        <span class="nav-badge" id="nav-stock-alert" style="display:none;background:#C48234;">!</span>
+      </button>
+
+      <button class="nav-item" data-view="settings" onclick="switchView('settings', this)">
+        <!-- Custom Gear / Backup Icon -->
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="3.5" fill="#E8C6A8" stroke="#4A2545" stroke-width="1.6"/>
+          <path d="M12 2V5M12 19V22M2 12H5M19 12H22M4.9 4.9L7 7M17 17L19.1 19.1M19.1 4.9L17 7M7 17L4.9 19.1" stroke="#F4E9DF" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        Settings & Backup
+      </button>
+    </nav>
+
+    <!-- Decorative Botanical Sprig SVG -->
+    <div class="sidebar-botanical">
+      <svg width="190" height="72" viewBox="0 0 190 72" fill="none">
+        <path d="M12 68C45 48 85 32 145 14" stroke="#B792B0" stroke-width="1.6" stroke-linecap="round"/>
+        <ellipse cx="52" cy="42" rx="11" ry="5" transform="rotate(-32 52 42)" fill="#9E7698"/>
+        <ellipse cx="78" cy="36" rx="12" ry="5.5" transform="rotate(18 78 36)" fill="#89A88D"/>
+        <ellipse cx="104" cy="24" rx="11" ry="4.5" transform="rotate(-28 104 24)" fill="#B589AE"/>
+        <ellipse cx="126" cy="22" rx="10" ry="4.5" transform="rotate(20 126 22)" fill="#89A88D"/>
+      </svg>
+    </div>
+  </aside>
+
+  <!-- MAIN WORKSPACE SHELL -->
+  <div class="main-shell">
+    <!-- TOP UTILITY BAR -->
+    <header class="topbar">
+      <div class="search-pill">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6E5D6B" stroke-width="2">
+          <circle cx="11" cy="11" r="7"/><path d="M20 20L16.5 16.5" stroke-linecap="round"/>
+        </svg>
+        <input type="text" id="global-search" placeholder="Search protocols, experiments, reagents, notes..." oninput="handleGlobalSearch(this.value)" />
+      </div>
+
+      <div class="timer-dock" id="timer-dock"></div>
+
+      <button class="btn btn-sm" onclick="openTimerModal()">+ Timer</button>
+
+      <button class="btn btn-plum" style="margin-left:auto;" onclick="toggleAIDrawer()">
+        <!-- Custom Sparkle Wand SVG -->
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M4 20L16 8" stroke="#F8D8B0" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M17 3L18 6L21 7L18 8L17 11L16 8L13 7L16 6L17 3Z" fill="#FFE6B8"/>
+        </svg>
+        Ask AI Lab
+      </button>
+    </header>
+
+    <!-- GLOBAL SEARCH RESULTS DROPDOWN -->
+    <div id="search-results-panel" class="card" style="display:none; margin: 12px 28px 0; border-color: var(--plum-accent);"></div>
+
+    <main class="workspace">
+
+      <!-- ==================== 1. HOME VIEW ==================== -->
+      <section id="view-home" class="view-section active">
+        <div class="page-header">
+          <h2 class="page-title">Lab Overview</h2>
+          <div class="flex-gap">
+            <span class="tag-pill" id="home-date-badge"></span>
+          </div>
+        </div>
+
+        <!-- 4 QUICK ACTION CARDS -->
+        <div class="quick-grid">
+          <button class="quick-card primary" onclick="openNewExperimentModal()">
+            <!-- Custom Pipette SVG -->
+            <svg width="34" height="34" viewBox="0 0 36 36" fill="none">
+              <path d="M24 6L30 12L26 16L20 10L24 6Z" fill="#E8B89A" stroke="#FFF" stroke-width="1.5"/>
+              <path d="M20 10L10 20L8 27L15 25L25 15" fill="#D5E8EE" stroke="#FFF" stroke-width="1.5"/>
+              <path d="M8 27L6 30" stroke="#9AD5E6" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span class="quick-card-label">New Experiment</span>
+            <span style="font-size:1.3rem;">+</span>
+          </button>
+
+          <button class="quick-card" onclick="switchView('protocols'); openNewProtocolModal();">
+            <svg width="34" height="34" viewBox="0 0 36 36" fill="none">
+              <path d="M5 9C9 7.5 14 8 18 11C22 8 27 7.5 31 9V27C27 25.5 22 26 18 29C14 26 9 25.5 5 27V9Z" fill="#F5E2CE" stroke="#4A2545" stroke-width="1.6"/>
+              <path d="M18 11V29" stroke="#4A2545" stroke-width="1.6"/>
+            </svg>
+            <span class="quick-card-label">New Protocol</span>
+            <span style="font-size:1.3rem;color:var(--plum-accent);">+</span>
+          </button>
+
+          <button class="quick-card" onclick="switchView('culture'); openCellModal();">
+            <svg width="34" height="34" viewBox="0 0 36 36" fill="none">
+              <ellipse cx="18" cy="19" rx="12" ry="8" fill="#F2D4DC" stroke="#4A2545" stroke-width="1.6"/>
+              <ellipse cx="18" cy="17" rx="12" ry="7" fill="#FCEFF2" stroke="#4A2545" stroke-width="1.5"/>
+              <circle cx="15" cy="17" r="2" fill="#A85C7E"/>
+              <circle cx="21" cy="16" r="1.6" fill="#A85C7E"/>
+            </svg>
+            <span class="quick-card-label">Log Cell Culture</span>
+            <span style="font-size:1.3rem;color:var(--plum-accent);">+</span>
+          </button>
+
+          <button class="quick-card" onclick="switchView('notebook'); openNoteModal();">
+            <svg width="34" height="34" viewBox="0 0 36 36" fill="none">
+              <path d="M27 7C21 10 14 18 10 27L8 29L10 27C19 23 26 16 29 9L27 7Z" fill="#E6B98A" stroke="#4A2545" stroke-width="1.6"/>
+              <path d="M12 24L25 11" stroke="#4A2545" stroke-width="1.4"/>
+            </svg>
+            <span class="quick-card-label">Quick Note</span>
+            <span style="font-size:1.3rem;color:var(--plum-accent);">+</span>
+          </button>
+        </div>
+
+        <!-- 3-COLUMN DASHBOARD BENTO -->
+        <div class="home-bento">
+          <!-- Column 1: Ongoing Experiments -->
+          <div class="card card-wash-plum">
+            <div class="card-header">
+              <h3 class="card-title">Ongoing Experiments</h3>
+              <button class="btn btn-sm" onclick="switchView('experiments')">View all →</button>
+            </div>
+            <div id="home-ongoing-list"></div>
+          </div>
+
+          <!-- Column 2: Today's Plan -->
+          <div class="card card-wash-sage">
+            <div class="card-header">
+              <h3 class="card-title">Today's Plan</h3>
+              <span class="tag-pill tag-sage" id="todo-counter">0 / 0</span>
+            </div>
+            <div id="todo-list"></div>
+            <div class="flex-gap mt-3">
+              <input type="text" id="new-todo-input" class="input" placeholder="Add bench task for today..." onkeydown="if(event.key==='Enter') addTodo()" />
+              <button class="btn btn-plum btn-sm" onclick="addTodo()">+ Add</button>
+            </div>
+          </div>
+
+          <!-- Column 3: Lab Calendar -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Lab Calendar</h3>
+              <div class="flex-gap">
+                <button class="btn btn-sm" onclick="changeCalMonth(-1)">‹</button>
+                <span id="cal-month-label" style="font-size:0.84rem;font-weight:700;"></span>
+                <button class="btn btn-sm" onclick="changeCalMonth(1)">›</button>
+              </div>
+            </div>
+            <div class="cal-grid" id="calendar-grid"></div>
+            <div class="flex-gap mt-3" style="font-size:0.74rem;color:var(--ink-muted);">
+              <span><span class="cal-dot" style="display:inline-block;background:#6D3B65;"></span> Experiment</span>
+              <span><span class="cal-dot" style="display:inline-block;background:#6F9173;"></span> Cell Culture</span>
+              <span><span class="cal-dot" style="display:inline-block;background:#C48234;"></span> Note/Log</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity Strip -->
+        <div class="card">
+          <div class="card-header" style="margin-bottom:10px;">
+            <h3 class="card-title">Recent Activity</h3>
+          </div>
+          <div class="activity-strip" id="recent-activity-strip"></div>
+        </div>
+      </section>
+
+      <!-- ==================== 2. PROTOCOLS FLOWCHART STUDIO ==================== -->
+      <section id="view-protocols" class="view-section">
+        <div class="page-header">
+          <h2 class="page-title">Protocols Studio</h2>
+          <div class="flex-gap">
+            <button class="btn" onclick="toggleAIDrawer('flowchart')">AI Text → Flowchart</button>
+            <button class="btn btn-plum" onclick="openNewProtocolModal()">+ New Flowchart Protocol</button>
+          </div>
+        </div>
+
+        <div class="protocol-layout">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Saved Protocols</h3>
+            </div>
+            <input type="text" class="input mb-2" placeholder="Filter protocols..." oninput="renderProtocolList(this.value)" />
+            <div id="protocol-sidebar-list"></div>
+          </div>
+
+          <div class="flow-canvas" id="protocol-canvas-area"></div>
+        </div>
+      </section>
+
+      <!-- ==================== 3. ONGOING EXPERIMENTS & ARCHIVE ==================== -->
+      <section id="view-experiments" class="view-section">
+        <div class="page-header">
+          <h2 class="page-title">Experiments</h2>
+          <div class="flex-gap">
+            <button class="btn btn-sm active" id="tab-active-runs" onclick="setExpTab('active')">Active Runs</button>
+            <button class="btn btn-sm" id="tab-archive-runs" onclick="setExpTab('archive')">Archive (Completed / Failed)</button>
+            <button class="btn btn-plum" onclick="openNewExperimentModal()">+ Start Experiment</button>
+          </div>
+        </div>
+
+        <div id="experiments-workspace"></div>
+      </section>
+
+      <!-- ==================== 4. DATA TOOLBOX ==================== -->
+      <section id="view-toolbox" class="view-section">
+        <div class="page-header">
+          <h2 class="page-title">Data Toolbox</h2>
+          <div class="flex-gap" id="calc-tabs">
+            <button class="btn btn-plum btn-sm" onclick="switchCalc('qpcr', this)">qPCR ΔΔCt</button>
+            <button class="btn btn-sm" onclick="switchCalc('seeding', this)">Cell Seeding</button>
+            <button class="btn btn-sm" onclick="switchCalc('mastermix', this)">Master Mix</button>
+            <button class="btn btn-sm" onclick="switchCalc('digest', this)">Restriction Digest</button>
+            <button class="btn btn-sm" onclick="switchCalc('gel', this)">Agarose Gel</button>
+            <button class="btn btn-sm" onclick="switchCalc('dilution', this)">Serial Dilution & Buffer</button>
+          </div>
+        </div>
+
+        <div id="calculator-container"></div>
+      </section>
+
+      <!-- ==================== 5. CELL CULTURE ==================== -->
+      <section id="view-culture" class="view-section">
+        <div class="page-header">
+          <h2 class="page-title">Cell Culture</h2>
+          <button class="btn btn-plum" onclick="openCellModal()">+ Add Cell Line</button>
+        </div>
+
+        <div class="grid-3 mb-3" id="cell-lines-grid"></div>
+        <div id="cell-detail-panel"></div>
+      </section>
+
+      <!-- ==================== 6. LAB NOTEBOOK ==================== -->
+      <section id="view-notebook" class="view-section">
+        <div class="page-header">
+          <h2 class="page-title">Lab Notebook</h2>
+          <button class="btn btn-plum" onclick="openNoteModal()">+ New Journal Entry</button>
+        </div>
+
+        <div class="protocol-layout">
+          <div class="card">
+            <input type="text" class="input mb-2" placeholder="Search notes or tags..." oninput="renderNotebookList(this.value)" />
+            <div id="notebook-entries-list"></div>
+          </div>
+          <div class="card" id="notebook-reader-panel"></div>
+        </div>
+      </section>
+
+      <!-- ==================== 7. REAGENTS & INVENTORY ==================== -->
+      <section id="view-inventory" class="view-section">
+        <div class="page-header">
+          <h2 class="page-title">Reagents & Stock</h2>
+          <div class="flex-gap">
+            <select id="inv-cat-filter" class="input" style="width:170px;" onchange="renderInventory()">
+              <option value="All">All Categories</option>
+              <option value="Buffers">Buffers</option>
+              <option value="Enzymes">Enzymes</option>
+              <option value="Antibodies">Antibodies</option>
+              <option value="Plasmids">Plasmids</option>
+              <option value="Media">Media & Sera</option>
+              <option value="Consumables">Consumables</option>
+            </select>
+            <button class="btn btn-plum" onclick="openReagentModal()">+ Add Reagent</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div id="inventory-table-wrap"></div>
+        </div>
+      </section>
+
+      <!-- ==================== 8. SETTINGS & BACKUP ==================== -->
+      <section id="view-settings" class="view-section">
+        <div class="page-header">
+          <h2 class="page-title">Settings & Data Backup</h2>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3 class="card-title mb-2">Gemini AI Integration</h3>
+            <p style="font-size:0.86rem;color:var(--ink-muted);margin-bottom:12px;">
+              Paste your personal Google Gemini API key below to enable Text-to-Flowchart generation, Ask My Lab search, troubleshooting suggestions, and experiment recaps. Your key is stored strictly in your browser.
+            </p>
+            <label>Gemini API Key</label>
+            <input type="password" id="gemini-api-key-input" class="input mb-2" placeholder="AIzaSy..." />
+            <button class="btn btn-plum" onclick="saveApiKey()">Save API Key</button>
+            <span id="api-key-status" style="font-size:0.82rem;margin-left:10px;color:var(--sage);"></span>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title mb-2">Local Database Backup (IndexedDB)</h3>
+            <p style="font-size:0.86rem;color:var(--ink-muted);margin-bottom:12px;">
+              All protocols, experiments, microscopy photos, notes, and inventory records are stored locally in your browser. Export a JSON backup regularly to keep a copy on your computer.
+            </p>
+            <div class="flex-gap">
+              <button class="btn btn-plum" onclick="exportFullBackup()">Export JSON Backup</button>
+              <label class="btn" style="margin:0;cursor:pointer;">
+                Import JSON Backup
+                <input type="file" accept=".json" style="display:none;" onchange="importFullBackup(event)" />
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- SLIDE-OVER AI LAB ASSISTANT DRAWER -->
+  <aside class="ai-drawer" id="ai-drawer">
+    <div class="flex-between">
+      <h3 class="serif" style="font-size:1.35rem;color:var(--plum-dark);">Ask AI Lab</h3>
+      <button class="btn btn-sm" onclick="toggleAIDrawer()">✕</button>
+    </div>
+
+    <div class="ai-tabs">
+      <button class="ai-tab-btn active" data-aimode="ask" onclick="setAIMode('ask', this)">Ask My Lab</button>
+      <button class="ai-tab-btn" data-aimode="flowchart" onclick="setAIMode('flowchart', this)">Text → Flowchart</button>
+      <button class="ai-tab-btn" data-aimode="troubleshoot" onclick="setAIMode('troubleshoot', this)">Troubleshoot Run</button>
+      <button class="ai-tab-btn" data-aimode="recap" onclick="setAIMode('recap', this)">Experiment Recap</button>
+    </div>
+
+    <div id="ai-mode-hint" style="font-size:0.78rem;color:var(--ink-muted);margin-bottom:10px;">
+      Searches across your recorded protocols, notes, and experiments. AI suggestions are clearly separated from your logged records.
+    </div>
+
+    <div class="ai-feed" id="ai-feed"></div>
+
+    <div class="flex-gap">
+      <textarea id="ai-prompt-input" rows="2" class="input" placeholder="Ask a question or paste protocol steps..."></textarea>
+      <button class="btn btn-plum" style="width:100%;" onclick="runAIAssistant()">Send to AI Assistant</button>
+    </div>
+  </aside>
+
+  <!-- REUSABLE MODAL DIALOG -->
+  <div class="modal-backdrop" id="modal-backdrop" onclick="if(event.target===this) closeModal()">
+    <div class="modal-box" id="modal-box"></div>
+  </div>
+
+  <script>
+    /* ==================== INDEXEDDB PERSISTENCE LAYER ==================== */
+    const DB_NAME = 'LabookWorkspaceDB';
+    const DB_VERSION = 1;
+    let db;
+
+    const defaultState = {
+      protocols: [],
+      experiments: [],
+      cellLines: [],
+      notes: [],
+      reagents: [],
+      todos: [],
+      activities: []
+    };
+
+    let appState = structuredClone(defaultState);
+    let selectedProtocolId = null;
+    let selectedExperimentId = null;
+    let selectedCellLineId = null;
+    let selectedNoteId = null;
+    let expTabMode = 'active';
+    let currentAIMode = 'ask';
+    let calYear = new Date().getFullYear();
+    let calMonth = new Date().getMonth();
+    let timers = [];
+
+    function initDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const database = e.target.result;
+          if (!database.objectStoreNames.contains('workspace')) {
+            database.createObjectStore('workspace');
+          }
+        };
+        req.onsuccess = (e) => {
+          db = e.target.result;
+          loadState().then(resolve);
+        };
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    function loadState() {
+      return new Promise((resolve) => {
+        const tx = db.transaction('workspace', 'readonly');
+        const store = tx.objectStore('workspace');
+        const req = store.get('mainState');
+        req.onsuccess = () => {
+          if (req.result) {
+            appState = { ...structuredClone(defaultState), ...req.result };
+          }
+          resolve();
+        };
+        req.onerror = () => resolve();
+      });
+    }
+
+    function saveState() {
+      if (!db) return;
+      const tx = db.transaction('workspace', 'readwrite');
+      tx.objectStore('workspace').put(appState, 'mainState');
+      updateBadges();
+    }
+
+    function logActivity(type, label) {
+      appState.activities.unshift({
+        id: Date.now(),
+        type,
+        label,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        date: todayISO()
+      });
+      if (appState.activities.length > 15) appState.activities.pop();
+      saveState();
+      renderHome();
+    }
+
+    function todayISO() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function escapeHTML(str) {
+      return String(str || '').replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[m]));
+    }
+
+    /* ==================== NAVIGATION & TOP BAR ==================== */
+    function switchView(viewName, btnEl) {
+      document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+      document.getElementById(`view-${viewName}`).classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+      if (btnEl) {
+        btnEl.classList.add('active');
+      } else {
+        const targetBtn = document.querySelector(`.nav-item[data-view="${viewName}"]`);
+        if (targetBtn) targetBtn.classList.add('active');
+      }
+      renderAll();
+    }
+
+    function updateBadges() {
+      const activeExps = appState.experiments.filter(e => e.status === 'active').length;
+      document.getElementById('nav-exp-count').textContent = activeExps;
+
+      const lowOrExpiring = appState.reagents.filter(r => isLowStock(r) || isExpiringSoon(r)).length;
+      const alertBadge = document.getElementById('nav-stock-alert');
+      if (lowOrExpiring > 0) {
+        alertBadge.style.display = 'inline-block';
+        alertBadge.textContent = lowOrExpiring;
+      } else {
+        alertBadge.style.display = 'none';
+      }
+    }
+
+    /* ==================== MULTI-TIMER DOCK ==================== */
+    function openTimerModal() {
+      openModal(`
+        <h3 class="serif mb-2" style="color:var(--plum-dark);">Start Lab Countdown Timer</h3>
+        <label>Timer Label</label>
+        <input type="text" id="timer-label-in" class="input mb-2" placeholder="e.g., Trypsinization, Heat Shock, Wash" />
+        <div class="grid-2 mb-3">
+          <div><label>Minutes</label><input type="number" id="timer-min-in" class="input" value="5" min="0" /></div>
+          <div><label>Seconds</label><input type="number" id="timer-sec-in" class="input" value="0" min="0" max="59" /></div>
+        </div>
+        <div class="flex-gap" style="justify-content:flex-end;">
+          <button class="btn" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-plum" onclick="createTimerFromModal()">Start Timer</button>
+        </div>
+      `);
+    }
+
+    function createTimerFromModal() {
+      const label = document.getElementById('timer-label-in').value.trim() || 'Lab Timer';
+      const mins = parseInt(document.getElementById('timer-min-in').value || '0', 10);
+      const secs = parseInt(document.getElementById('timer-sec-in').value || '0', 10);
+      const total = mins * 60 + secs;
+      if (total > 0) {
+        startTimer(label, total);
+        closeModal();
+      }
+    }
+
+    function startTimer(label, seconds) {
+      timers.push({ id: Date.now() + Math.random(), label, remaining: seconds, running: true });
+      renderTimers();
+    }
+
+    setInterval(() => {
+      let changed = false;
+      timers.forEach(t => {
+        if (t.running && t.remaining > 0) {
+          t.remaining--;
+          changed = true;
+          if (t.remaining === 0) {
+            t.running = false;
+            alert(`Lab Timer Complete: ${t.label}`);
+          }
+        }
+      });
+      if (changed) renderTimers();
+    }, 1000);
+
+    function renderTimers() {
+      const dock = document.getElementById('timer-dock');
+      dock.innerHTML = timers.map(t => {
+        const m = String(Math.floor(t.remaining / 60)).padStart(2, '0');
+        const s = String(t.remaining % 60).padStart(2, '0');
+        return `
+          <div class="timer-pill ${t.running ? 'running' : ''}">
+            <span>${escapeHTML(t.label)}: <strong>${m}:${s}</strong></span>
+            <button onclick="toggleTimer(${t.id})">${t.running ? '❚❚' : '▶'}</button>
+            <button onclick="removeTimer(${t.id})">✕</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleTimer(id) {
+      const t = timers.find(x => x.id === id);
+      if (t) { t.running = !t.running; renderTimers(); }
+    }
+
+    function removeTimer(id) {
+      timers = timers.filter(x => x.id !== id);
+      renderTimers();
+    }
+
+    /* ==================== GLOBAL SEARCH ==================== */
+    function handleGlobalSearch(q) {
+      const panel = document.getElementById('search-results-panel');
+      const query = q.trim().toLowerCase();
+      if (!query) { panel.style.display = 'none'; return; }
+
+      const hits = [];
+      appState.protocols.forEach(p => {
+        if (p.title.toLowerCase().includes(query) || (p.tag || '').toLowerCase().includes(query)) {
+          hits.push({ kind: 'Protocol', title: p.title, action: () => { selectedProtocolId = p.id; switchView('protocols'); } });
+        }
+      });
+      appState.experiments.forEach(e => {
+        if (e.title.toLowerCase().includes(query)) {
+          hits.push({ kind: 'Experiment', title: e.title, action: () => { selectedExperimentId = e.id; switchView('experiments'); } });
+        }
+      });
+      appState.notes.forEach(n => {
+        if (n.title.toLowerCase().includes(query) || n.body.toLowerCase().includes(query)) {
+          hits.push({ kind: 'Notebook', title: n.title, action: () => { selectedNoteId = n.id; switchView('notebook'); } });
+        }
+      });
+      appState.reagents.forEach(r => {
+        if (r.name.toLowerCase().includes(query) || (r.location || '').toLowerCase().includes(query)) {
+          hits.push({ kind: 'Reagent', title: `${r.name} (${r.location || 'No location'})`, action: () => switchView('inventory') });
+        }
+      });
+
+      panel.style.display = 'block';
+      if (hits.length === 0) {
+        panel.innerHTML = `<span style="color:var(--ink-muted);font-size:0.86rem;">No matching records found for "${escapeHTML(q)}".</span>`;
+        return;
+      }
+
+      window._searchHits = hits;
+      panel.innerHTML = `
+        <div class="flex-between mb-2">
+          <strong style="font-size:0.84rem;color:var(--plum-dark);">Search Results (${hits.length})</strong>
+          <button class="btn btn-sm" onclick="document.getElementById('global-search').value='';handleGlobalSearch('')">Close</button>
+        </div>
+        <div class="flex-gap">
+          ${hits.map((h, i) => `
+            <button class="btn btn-sm" onclick="window._searchHits[${i}].action();document.getElementById('search-results-panel').style.display='none';">
+              <span class="tag-pill">${h.kind}</span> ${escapeHTML(h.title)}
+            </button>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    /* ==================== 1. HOME RENDERING ==================== */
+    function renderHome() {
+      document.getElementById('home-date-badge').textContent = new Date().toLocaleDateString('en-US', {
+        weekday: 'long', month: 'short', day: 'numeric', year: 'numeric'
+      });
+
+      // Ongoing Experiments
+      const ongoingWrap = document.getElementById('home-ongoing-list');
+      const activeExps = appState.experiments.filter(e => e.status === 'active');
+      if (activeExps.length === 0) {
+        ongoingWrap.innerHTML = `
+          <div class="empty-state">
+            <strong>No active experiments running</strong>
+            <p>Create a flowchart protocol or launch a new experiment run to track steps here.</p>
+            <button class="btn btn-plum btn-sm" onclick="openNewExperimentModal()">+ Start Experiment</button>
+          </div>`;
+      } else {
+        ongoingWrap.innerHTML = activeExps.slice(0, 4).map(exp => {
+          const total = exp.steps.length || 1;
+          const done = exp.steps.filter(s => s.done).length;
+          const pct = Math.round((done / total) * 100);
+          return `
+            <div class="exp-mini-item" onclick="selectedExperimentId='${exp.id}';switchView('experiments')">
+              <div class="flex-between">
+                <span class="tag-pill">${escapeHTML(exp.project || 'Run')}</span>
+                <span class="tag-pill tag-sage">Step ${Math.min(done + 1, total)} of ${total}</span>
+              </div>
+              <div style="font-weight:700;margin-top:6px;">${escapeHTML(exp.title)}</div>
+              <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Today's Plan
+      const todoList = document.getElementById('todo-list');
+      const doneCount = appState.todos.filter(t => t.done).length;
+      document.getElementById('todo-counter').textContent = `${doneCount} / ${appState.todos.length}`;
+      if (appState.todos.length === 0) {
+        todoList.innerHTML = `<p style="font-size:0.85rem;color:var(--ink-muted);padding:12px 0;">No tasks scheduled yet. Add your bench checklist items below.</p>`;
+      } else {
+        todoList.innerHTML = appState.todos.map(t => `
+          <div class="todo-item ${t.done ? 'done' : ''}">
+            <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTodo('${t.id}')" />
+            <span style="flex:1;">${escapeHTML(t.text)}</span>
+            <button style="border:none;background:none;color:var(--ink-muted);cursor:pointer;" onclick="deleteTodo('${t.id}')">✕</button>
+          </div>
+        `).join('');
+      }
+
+      renderCalendar();
+
+      // Recent Activity
+      const actStrip = document.getElementById('recent-activity-strip');
+      if (appState.activities.length === 0) {
+        actStrip.innerHTML = `<span style="font-size:0.85rem;color:var(--ink-muted);">No activity recorded yet.</span>`;
+      } else {
+        actStrip.innerHTML = appState.activities.slice(0, 4).map(a => `
+          <div class="activity-item">
+            <span class="tag-pill">${escapeHTML(a.type)}</span>
+            <div>
+              <div style="font-weight:600;">${escapeHTML(a.label)}</div>
+              <div style="font-size:0.74rem;color:var(--ink-muted);">${a.date} · ${a.time}</div>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    function addTodo() {
+      const inp = document.getElementById('new-todo-input');
+      const text = inp.value.trim();
+      if (!text) return;
+      appState.todos.push({ id: String(Date.now()), text, done: false });
+      inp.value = '';
+      saveState();
+      renderHome();
+    }
+
+    function toggleTodo(id) {
+      const item = appState.todos.find(t => t.id === id);
+      if (item) { item.done = !item.done; saveState(); renderHome(); }
+    }
+
+    function deleteTodo(id) {
+      appState.todos = appState.todos.filter(t => t.id !== id);
+      saveState();
+      renderHome();
+    }
+
+    function changeCalMonth(delta) {
+      calMonth += delta;
+      if (calMonth < 0) { calMonth = 11; calYear--; }
+      if (calMonth > 11) { calMonth = 0; calYear++; }
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      document.getElementById('cal-month-label').textContent = `${monthNames[calMonth]} ${calYear}`;
+
+      const firstDay = new Date(calYear, calMonth, 1).getDay();
+      const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+      const todayStr = todayISO();
+
+      const heads = ['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => `<div class="cal-head">${d}</div>`).join('');
+      let cells = '';
+      for (let i = 0; i < firstDay; i++) cells += `<div></div>`;
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const iso = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const hasExp = appState.experiments.some(e => e.date === iso);
+        const hasCell = appState.cellLines.some(c => c.logs && c.logs.some(l => l.date === iso));
+        const hasNote = appState.notes.some(n => n.date === iso);
+
+        cells += `
+          <div class="cal-day ${iso === todayStr ? 'today' : ''}" title="${iso}">
+            <span>${d}</span>
+            <div class="cal-dots">
+              ${hasExp ? '<span class="cal-dot" style="background:#6D3B65;"></span>' : ''}
+              ${hasCell ? '<span class="cal-dot" style="background:#6F9173;"></span>' : ''}
+              ${hasNote ? '<span class="cal-dot" style="background:#C48234;"></span>' : ''}
+            </div>
+          </div>
+        `;
+      }
+      document.getElementById('calendar-grid').innerHTML = heads + cells;
+    }
+
+    /* ==================== 2. PROTOCOLS FLOWCHART STUDIO ==================== */
+    function renderProtocols() {
+      renderProtocolList();
+      const canvas = document.getElementById('protocol-canvas-area');
+      const proto = appState.protocols.find(p => p.id === selectedProtocolId) || appState.protocols[0];
+
+      if (!proto) {
+        canvas.innerHTML = `
+          <div class="empty-state" style="margin-top:80px;">
+            <h3 class="serif" style="color:var(--plum-dark);">Flowchart Protocol Canvas</h3>
+            <p>Create a visual flowchart protocol with step timers, decision branches, and reagent lists, or paste plain text into the AI Assistant to generate one automatically.</p>
+            <button class="btn btn-plum" onclick="openNewProtocolModal()">+ Create First Flowchart Protocol</button>
+          </div>`;
+        return;
+      }
+
+      selectedProtocolId = proto.id;
+      canvas.innerHTML = `
+        <div class="flex-between mb-3" style="background:#FFFDF9;padding:14px 18px;border-radius:14px;border:1px solid var(--card-border);">
+          <div>
+            <span class="tag-pill">${escapeHTML(proto.tag || 'General')}</span>
+            <h3 class="serif" style="font-size:1.3rem;color:var(--plum-dark);margin-top:4px;">${escapeHTML(proto.title)}</h3>
+          </div>
+          <div class="flex-gap">
+            <button class="btn btn-sm" onclick="openAddNodeModal('${proto.id}')">+ Add Flowchart Node</button>
+            <button class="btn btn-plum btn-sm" onclick="launchExperimentFromProtocol('${proto.id}')">Launch Experiment ▶</button>
+            <button class="btn btn-sm" style="color:var(--rose);" onclick="deleteProtocol('${proto.id}')">Delete</button>
+          </div>
+        </div>
+
+        ${proto.nodes.length === 0 ? `
+          <div class="empty-state">
+            <p>No nodes in this flowchart yet. Add an Action step, Decision branch, or Hold point.</p>
+            <button class="btn btn-plum btn-sm" onclick="openAddNodeModal('${proto.id}')">+ Add First Step</button>
+          </div>
+        ` : proto.nodes.map((node, idx) => `
+          ${idx > 0 ? '<div class="flow-connector"></div>' : ''}
+          <div class="flow-node ${node.type}">
+            <div class="flex-between">
+              <span class="tag-pill ${node.type === 'decision' ? 'tag-amber' : node.type === 'hold' ? 'tag-sage' : ''}">
+                ${node.type === 'decision' ? 'Decision Branch' : node.type === 'hold' ? 'Hold / Safe Stop' : `Step ${idx + 1}`}
+              </span>
+              <div class="flex-gap">
+                ${node.timerSec > 0 ? `<button class="btn btn-sm btn-sage" onclick="startTimer('${escapeHTML(node.title)}', ${node.timerSec})">⏱ ${Math.round(node.timerSec/60)}m Timer</button>` : ''}
+                <button class="btn btn-sm" onclick="removeFlowNode('${proto.id}', '${node.id}')">✕</button>
+              </div>
+            </div>
+            <div style="font-weight:700;font-size:0.98rem;margin-top:6px;">${escapeHTML(node.title)}</div>
+            ${node.details ? `<div style="font-size:0.85rem;color:var(--ink-muted);margin-top:4px;">${escapeHTML(node.details)}</div>` : ''}
+            ${node.type === 'decision' ? `
+              <div class="grid-2 mt-2" style="font-size:0.8rem;">
+                <div style="padding:6px 10px;border-radius:8px;background:var(--sage-soft);"><strong>Yes →</strong> ${escapeHTML(node.yesBranch || 'Continue')}</div>
+                <div style="padding:6px 10px;border-radius:8px;background:var(--rose-soft);"><strong>No →</strong> ${escapeHTML(node.noBranch || 'Troubleshoot')}</div>
+              </div>
+            ` : ''}
+            ${node.reagents ? `<div class="mt-2" style="font-size:0.78rem;color:var(--plum-accent);"><strong>Reagents:</strong> ${escapeHTML(node.reagents)}</div>` : ''}
+            ${node.image ? `<img src="${node.image}" style="max-height:140px;border-radius:10px;margin-top:8px;border:1px solid var(--card-border);" />` : ''}
+          </div>
+        `).join('')}
+      `;
+    }
+
+    function renderProtocolList(filter = '') {
+      const list = document.getElementById('protocol-sidebar-list');
+      const q = filter.toLowerCase();
+      const filtered = appState.protocols.filter(p => p.title.toLowerCase().includes(q) || (p.tag || '').toLowerCase().includes(q));
+      if (filtered.length === 0) {
+        list.innerHTML = `<p style="font-size:0.83rem;color:var(--ink-muted);padding:10px 0;">No protocols saved yet.</p>`;
+        return;
+      }
+      list.innerHTML = filtered.map(p => `
+        <div class="exp-mini-item" style="${p.id === selectedProtocolId ? 'border-color:var(--plum-accent);background:#EFE3ED;' : ''}"
+             onclick="selectedProtocolId='${p.id}';renderProtocols()">
+          <div style="font-weight:700;font-size:0.9rem;">${escapeHTML(p.title)}</div>
+          <div style="font-size:0.76rem;color:var(--ink-muted);">${escapeHTML(p.tag || 'General')} · ${p.nodes.length} steps</div>
+        </div>
+      `).join('');
+    }
+
+    function openNewProtocolModal() {
+      openModal(`
+        <h3 class="serif mb-2" style="color:var(--plum-dark);">Create Flowchart Protocol</h3>
+        <label>Protocol Title</label>
+        <input type="text" id="proto-title-in" class="input mb-2" placeholder="e.g., RNA Extraction & RT-qPCR Setup" />
+        <label>Category / Tag</label>
+        <input type="text" id="proto-tag-in" class="input mb-3" placeholder="e.g., Virology, Cloning, Protein, qPCR" />
+        <div class="flex-gap" style="justify-content:flex-end;">
+          <button class="btn" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-plum" onclick="createProtocol()">Create Flowchart</button>
+        </div>
+      `);
+    }
+
+    function createProtocol() {
+      const title = document.getElementById('proto-title-in').value.trim();
+      if (!title) return;
+      const tag = document.getElementById('proto-tag-in').value.trim() || 'General';
+      const newProto = { id: String(Date.now()), title, tag, nodes: [] };
+      appState.protocols.unshift(newProto);
+      selectedProtocolId = newProto.id;
+      saveState();
+      logActivity('Protocol', `Created "${title}"`);
+      closeModal();
+      renderProtocols();
+    }
+
+    function openAddNodeModal(protoId) {
+      openModal(`
+        <h3 class="serif mb-2" style="color:var(--plum-dark);">Add Flowchart Node</h3>
+        <label>Node Type</label>
+        <select id="node-type-in" class="input mb-2" onchange="document.getElementById('branch-fields').style.display = this.value==='decision' ? 'grid' : 'none'">
+          <option value="action">Action Step</option>
+          <option value="decision">Decision / If-Else Branch</option>
+          <option value="hold">Checkpoint / Safe Stop</option>
+        </select>
+        <label>Step Title</label>
+        <input type="text" id="node-title-in" class="input mb-2" placeholder="e.g., Incubate at 37°C for 30 min" />
+        <label>Instructions / Parameters</label>
+        <textarea id="node-details-in" rows="2" class="input mb-2" placeholder="Buffers, RPM, temperatures, volumes..."></textarea>
+        <div id="branch-fields" class="grid-2 mb-2" style="display:none;">
+          <div><label>If YES Path</label><input type="text" id="node-yes-in" class="input" placeholder="Proceed to next step" /></div>
+          <div><label>If NO Path</label><input type="text" id="node-no-in" class="input" placeholder="Repeat / Troubleshoot" /></div>
+        </div>
+        <div class="grid-2 mb-2">
+          <div><label>Step Timer (Minutes, optional)</label><input type="number" id="node-timer-in" class="input" value="0" min="0" /></div>
+          <div><label>Reagents Needed (comma-separated)</label><input type="text" id="node-reagents-in" class="input" placeholder="e.g., HEPES Buffer, Phusion" /></div>
+        </div>
+        <label>Reference Image (Gel / Microscopy, optional)</label>
+        <input type="file" id="node-img-in" accept="image/*" class="input mb-3" />
+        <div class="flex-gap" style="justify-content:flex-end;">
+          <button class="btn" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-plum" onclick="addFlowNode('${protoId}')">Add Node</button>
+        </div>
+      `);
+    }
+
+    function addFlowNode(protoId) {
+      const proto = appState.protocols.find(p => p.id === protoId);
+      if (!proto) return;
+      const title = document.getElementById('node-title-in').value.trim();
+      if (!title) return;
+
+      const node = {
+        id: String(Date.now()),
+        type: document.getElementById('node-type-in').value,
+        title,
+        details: document.getElementById('node-details-in').value.trim(),
+        yesBranch: document.getElementById('node-yes-in').value.trim(),
+        noBranch: document.getElementById('node-no-in').value.trim(),
+        timerSec: (parseInt(document.getElementById('node-timer-in').value || '0', 10)) * 60,
+        reagents: document.getElementById('node-reagents-in').value.trim(),
+        image: ''
+      };
+
+      const fileInput = document.getElementById('node-img-in');
+      if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          node.image = e.target.result;
+          proto.nodes.push(node);
+          saveState();
+          closeModal();
+          renderProtocols();
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+      } else {
+        proto.nodes.push(node);
+        saveState();
+        closeModal();
+        renderProtocols();
+      }
+    }
+
+    function removeFlowNode(protoId, nodeId) {
+      const proto = appState.protocols.find(p => p.id === protoId);
+      if (!proto) return;
+      proto.nodes = proto.nodes.filter(n => n.id !== nodeId);
+      saveState();
+      renderProtocols();
+    }
+
+    function deleteProtocol(protoId) {
+      appState.protocols = appState.protocols.filter(p => p.id !== protoId);
+      selectedProtocolId = null;
+      saveState();
+      renderProtocols();
+    }
+
+    /* ==================== 3. EXPERIMENTS & REAGENT CHECKLIST ==================== */
+    function setExpTab(mode) {
+      expTabMode = mode;
+      document.getElementById('tab-active-runs').classList.toggle('btn-plum', mode === 'active');
+      document.getElementById('tab-archive-runs').classList.toggle('btn-plum', mode === 'archive');
+      renderExperiments();
+    }
+
+    function openNewExperimentModal() {
+      const protoOptions = appState.protocols.map(p => `<option value="${p.id}">${escapeHTML(p.title)}</option>`).join('');
+      openModal(`
+        <h3 class="serif mb-2" style="color:var(--plum-dark);">Start New Experiment</h3>
+        <label>Experiment Title</label>
+        <input type="text" id="exp-title-in" class="input mb-2" placeholder="e.g., NS5 Transfection & ISG qPCR Run 1" />
+        <label>Project / Assay Tag</label>
+        <input type="text" id="exp-proj-in" class="input mb-2" placeholder="e.g., KFDV, HBV, Cloning" />
+        <label>Link Flowchart Protocol (optional)</label>
+        <select id="exp-proto-in" class="input mb-3">
+          <option value="">-- Blank Custom Experiment --</option>
+          ${protoOptions}
+        </select>
+        <div class="flex-gap" style="justify-content:flex-end;">
+          <button class="btn" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-plum" onclick="createExperiment()">Start Run</button>
+        </div>
+      `);
+    }
+
+    function launchExperimentFromProtocol(protoId) {
+      const proto = appState.protocols.find(p => p.id === protoId);
+      if (!proto) return;
+      const steps = proto.nodes.map(n => ({
+        id: String(Date.now() + Math.random()),
+        title: n.title,
+        details: n.details,
+        timerSec: n.timerSec || 0,
+        done: false,
+        note: '',
+        photo: ''
+      }));
+      const reagents = [];
+      proto.nodes.forEach(n => {
+        if (n.reagents) {
+          n.reagents.split(',').map(s => s.trim()).filter(Boolean).forEach(rName => {
+            if (!reagents.some(x => x.name.toLowerCase() === rName.toLowerCase())) {
+              reagents.push({ name: rName, checked: false });
+            }
+          });
+        }
+      });
+
+      const exp = {
+        id: String(Date.now()),
+        title: `${proto.title} — Run`,
+        project: proto.tag || 'Assay',
+        date: todayISO(),
+        status: 'active',
+        steps,
+        reagents,
+        outcomeNote: ''
+      };
+      appState.experiments.unshift(exp);
+      selectedExperimentId = exp.id;
+      saveState();
+      logActivity('Experiment', `Started "${exp.title}"`);
+      switchView('experiments');
+    }
+
+    function createExperiment() {
+      const title = document.getElementById('exp-title-in').value.trim();
+      if (!title) return;
+      const project = document.getElementById('exp-proj-in').value.trim() || 'General';
+      const protoId = document.getElementById('exp-proto-in').value;
+
+      let steps = [];
+      let reagents = [];
+      if (protoId) {
+        const proto = appState.protocols.find(p => p.id === protoId);
+        if (proto) {
+          steps = proto.nodes.map(n => ({
+            id: String(Date.now() + Math.random()),
+            title: n.title,
+            details: n.details,
+            timerSec: n.timerSec || 0,
+            done: false,
+            note: '',
+            photo: ''
+          }));
+          proto.nodes.forEach(n => {
+            if (n.reagents) {
+              n.reagents.split(',').map(s => s.trim()).filter(Boolean).forEach(rName => {
+                if (!reagents.some(x => x.name.toLowerCase() === rName.toLowerCase())) {
+                  reagents.push({ name: rName, checked: false });
+                }
+              });
+            }
+          });
+        }
+      }
+
+      const exp = {
+        id: String(Date.now()),
+        title,
+        project,
+        date: todayISO(),
+        status: 'active',
+        steps,
+        reagents,
+        outcomeNote: ''
+      };
+      appState.experiments.unshift(exp);
+      selectedExperimentId = exp.id;
+      saveState();
+      logActivity('Experiment', `Started "${title}"`);
+      closeModal();
+      switchView('experiments');
+    }
+
+    function renderExperiments() {
+      const wrap = document.getElementById('experiments-workspace');
+      const filtered = appState.experiments.filter(e =>
+        expTabMode === 'active' ? e.status === 'active' : e.status !== 'active'
+      );
+
+      if (filtered.length === 0) {
+        wrap.innerHTML = `
+          <div class="empty-state">
+            <h3 class="serif" style="color:var(--plum-dark);">No ${expTabMode === 'active' ? 'Active Experiments' : 'Archived Runs'}</h3>
+            <p>${expTabMode === 'active' ? 'Start a new experiment or launch one directly from a flowchart protocol.' : 'Completed and failed experiment logs will appear here.'}</p>
+            ${expTabMode === 'active' ? '<button class="btn btn-plum" onclick="openNewExperimentModal()">+ Start Experiment</button>' : ''}
+          </div>`;
+        return;
+      }
+
+      const currentExp = filtered.find(e => e.id === selectedExperimentId) || filtered[0];
+      selectedExperimentId = currentExp.id;
+      const firstUndoneIdx = currentExp.steps.findIndex(s => !s.done);
+
+      wrap.innerHTML = `
+        <div class="flex-gap mb-3">
+          ${filtered.map(e => `
+            <button class="btn btn-sm ${e.id === currentExp.id ? 'btn-plum' : ''}" onclick="selectedExperimentId='${e.id}';renderExperiments()">
+              ${escapeHTML(e.title)}
+            </button>
+          `).join('')}
+        </div>
+
+        <div class="exp-split">
+          <!-- Left: Step-by-Step Walkthrough -->
+          <div class="card">
+            <div class="flex-between mb-3">
+              <div>
+                <span class="tag-pill">${escapeHTML(currentExp.project)}</span>
+                <span class="tag-pill ${currentExp.status === 'completed' ? 'tag-sage' : currentExp.status === 'failed' ? 'tag-rose' : 'tag-sky'}">${currentExp.status.toUpperCase()}</span>
+                <h3 class="serif" style="font-size:1.3rem;color:var(--plum-dark);margin-top:4px;">${escapeHTML(currentExp.title)}</h3>
+              </div>
+              <div class="flex-gap">
+                ${currentExp.status === 'active' ? `
+                  <button class="btn btn-sm" onclick="addStepToExp('${currentExp.id}')">+ Step</button>
+                  <button class="btn btn-sage btn-sm" onclick="finishExperiment('${currentExp.id}', 'completed')">Complete Run</button>
+                  <button class="btn btn-sm" style="color:var(--rose);" onclick="finishExperiment('${currentExp.id}', 'failed')">Mark Failed</button>
+                ` : ''}
+              </div>
+            </div>
+
+            ${currentExp.steps.length === 0 ? `
+              <div class="empty-state">
+                <p>No steps added to this run yet.</p>
+                <button class="btn btn-plum btn-sm" onclick="addStepToExp('${currentExp.id}')">+ Add First Step</button>
+              </div>
+            ` : currentExp.steps.map((step, idx) => {
+              const isCurrent = currentExp.status === 'active' && idx === firstUndoneIdx;
+              return `
+                <div class="step-card ${step.done ? 'completed' : ''} ${isCurrent ? 'current' : ''}">
+                  <div class="flex-between">
+                    <label style="display:flex;align-items:center;gap:10px;margin:0;color:var(--ink-primary);font-size:0.94rem;cursor:pointer;">
+                      <input type="checkbox" ${step.done ? 'checked' : ''} onchange="toggleExpStep('${currentExp.id}', '${step.id}')" style="width:17px;height:17px;accent-color:var(--plum-accent);" />
+                      <strong>Step ${idx + 1}: ${escapeHTML(step.title)}</strong>
+                    </label>
+                    ${step.timerSec > 0 ? `<button class="btn btn-sm" onclick="startTimer('${escapeHTML(step.title)}', ${step.timerSec})">⏱ ${Math.round(step.timerSec/60)}m</button>` : ''}
+                  </div>
+                  ${step.details ? `<div style="font-size:0.83rem;color:var(--ink-muted);margin:6px 0 0 27px;">${escapeHTML(step.details)}</div>` : ''}
+                  <div style="margin:8px 0 0 27px;">
+                    <input type="text" class="input" placeholder="Observation notes for this step..." value="${escapeHTML(step.note || '')}"
+                           onchange="updateStepNote('${currentExp.id}', '${step.id}', this.value)" />
+                    <div class="flex-gap mt-2">
+                      <label class="btn btn-sm" style="margin:0;cursor:pointer;">
+                        Attach Gel / Step Photo
+                        <input type="file" accept="image/*" style="display:none;" onchange="attachStepPhoto(event, '${currentExp.id}', '${step.id}')" />
+                      </label>
+                    </div>
+                    ${step.photo ? `<img src="${step.photo}" style="max-height:130px;border-radius:10px;margin-top:8px;border:1px solid var(--card-border);" />` : ''}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <!-- Right: Smart Reagent Checklist -->
+          <div class="card card-wash-sage">
+            <div class="card-header">
+              <h3 class="card-title">Smart Reagent Checklist</h3>
+            </div>
+            ${currentExp.reagents.length === 0 ? `
+              <p style="font-size:0.84rem;color:var(--ink-muted);margin-bottom:10px;">No reagents listed for this run yet.</p>
+            ` : currentExp.reagents.map((r, i) => {
+              const invMatch = appState.reagents.find(inv => inv.name.toLowerCase().includes(r.name.toLowerCase()));
+              let stockBadge = `<span class="tag-pill">Unlisted</span>`;
+              if (invMatch) {
+                stockBadge = isLowStock(invMatch)
+                  ? `<span class="tag-pill tag-amber">Low Stock (${escapeHTML(invMatch.location || '')})</span>`
+                  : `<span class="tag-pill tag-sage">In Stock (${escapeHTML(invMatch.location || '')})</span>`;
+              }
+              return `
+                <div class="todo-item ${r.checked ? 'done' : ''}">
+                  <input type="checkbox" ${r.checked ? 'checked' : ''} onchange="toggleExpReagent('${currentExp.id}', ${i})" />
+                  <span style="flex:1;">${escapeHTML(r.name)}</span>
+                  ${stockBadge}
+                </div>
+              `;
+            }).join('')}
+            <div class="flex-gap mt-3">
+              <input type="text" id="add-exp-reagent-in" class="input" placeholder="Add reagent to checklist..." onkeydown="if(event.key==='Enter') addExpReagent('${currentExp.id}')" />
+              <button class="btn btn-plum btn-sm" onclick="addExpReagent('${currentExp.id}')">+ Add</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function addStepToExp(expId) {
+      const title = prompt('Enter step title:');
+      if (!title) return;
+      const exp = appState.experiments.find(e => e.id === expId);
+      if (exp) {
+        exp.steps.push({ id: String(Date.now()), title: title.trim(), details: '', timerSec: 0, done: false, note: '', photo: '' });
+        saveState();
+        renderExperiments();
+      }
+    }
+
+    function toggleExpStep(expId, stepId) {
+      const exp = appState.experiments.find(e => e.id === expId);
+      const step = exp && exp.steps.find(s => s.id === stepId);
+      if (step) { step.done = !step.done; saveState(); renderExperiments(); renderHome(); }
+    }
+
+    function updateStepNote(expId, stepId, val) {
+      const exp = appState.experiments.find(e => e.id === expId);
+      const step = exp && exp.steps.find(s => s.id === stepId);
+      if (step) { step.note = val; saveState(); }
+    }
+
+    function attachStepPhoto(e, expId, stepId) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const exp = appState.experiments.find(x => x.id === expId);
+        const step = exp && exp.steps.find(s => s.id === stepId);
+        if (step) { step.photo = ev.target.result; saveState(); renderExperiments(); }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function addExpReagent(expId) {
+      const inp = document.getElementById('add-exp-reagent-in');
+      const name = inp.value.trim();
+      if (!name) return;
+      const exp = appState.experiments.find(e => e.id === expId);
+      if (exp) {
+        exp.reagents.push({ name, checked: false });
+        inp.value = '';
+        saveState();
+        renderExperiments();
+      }
+    }
+
+    function toggleExpReagent(expId, idx) {
+      const exp = appState.experiments.find(e => e.id === expId);
+      if (exp && exp.reagents[idx]) {
+        exp.reagents[idx].checked = !exp.reagents[idx].checked;
+        saveState();
+        renderExperiments();
+      }
+    }
+
+    function finishExperiment(expId, status) {
+      const exp = appState.experiments.find(e => e.id === expId);
+      if (!exp) return;
+      exp.status = status;
+      saveState();
+      logActivity('Experiment', `Marked "${exp.title}" as ${status}`);
+      renderExperiments();
+    }
+
+    /* ==================== 4. DATA TOOLBOX (CALCULATORS & CHARTS) ==================== */
+    let activeCalc = 'qpcr';
+    function switchCalc(name, btn) {
+      activeCalc = name;
+      document.querySelectorAll('#calc-tabs .btn').forEach(b => b.classList.remove('btn-plum'));
+      if (btn) btn.classList.add('btn-plum');
+      renderCalculator();
+    }
+
+    function renderCalculator() {
+      const box = document.getElementById('calculator-container');
+      if (activeCalc === 'qpcr') {
+        box.innerHTML = `
+          <div class="grid-2">
+            <div class="card">
+              <h3 class="card-title mb-2">qPCR ΔΔCt Raw Input</h3>
+              <table>
+                <thead><tr><th>Condition</th><th>Target Gene Ct</th><th>Housekeeping Ct</th></tr></thead>
+                <tbody>
+                  <tr><td>Control (Rep 1)</td><td><input type="number" step="0.01" id="c-t1" class="input" value="24.2"></td><td><input type="number" step="0.01" id="c-h1" class="input" value="18.1"></td></tr>
+                  <tr><td>Control (Rep 2)</td><td><input type="number" step="0.01" id="c-t2" class="input" value="24.4"></td><td><input type="number" step="0.01" id="c-h2" class="input" value="18.2"></td></tr>
+                  <tr><td>Treated (Rep 1)</td><td><input type="number" step="0.01" id="t-t1" class="input" value="21.5"></td><td><input type="number" step="0.01" id="t-h1" class="input" value="18.0"></td></tr>
+                  <tr><td>Treated (Rep 2)</td><td><input type="number" step="0.01" id="t-t2" class="input" value="21.7"></td><td><input type="number" step="0.01" id="t-h2" class="input" value="18.2"></td></tr>
+                </tbody>
+              </table>
+              <button class="btn btn-plum mt-3" onclick="calcQPCR()">Calculate Fold Change</button>
+            </div>
+            <div class="card">
+              <h3 class="card-title mb-2">Relative Fold Change (2^-ΔΔCt)</h3>
+              <div id="qpcr-output"></div>
+            </div>
+          </div>
+        `;
+        calcQPCR();
+      } else if (activeCalc === 'seeding') {
+        box.innerHTML = `
+          <div class="card" style="max-width:640px;">
+            <h3 class="card-title mb-2">Cell Culture Seeding Calculator</h3>
+            <div class="grid-2 mb-2">
+              <div><label>Stock Cell Count (cells/mL)</label><input type="number" id="seed-stock" class="input" value="1200000" oninput="calcSeeding()"></div>
+              <div><label>Target Cells per Well</label><input type="number" id="seed-target" class="input" value="200000" oninput="calcSeeding()"></div>
+              <div><label>Number of Wells (incl. extra)</label><input type="number" id="seed-wells" class="input" value="6.5" step="0.5" oninput="calcSeeding()"></div>
+              <div><label>Total Volume per Well (mL)</label><input type="number" id="seed-vol" class="input" value="2" step="0.1" oninput="calcSeeding()"></div>
+            </div>
+            <div id="seeding-output" class="mt-3"></div>
+          </div>
+        `;
+        calcSeeding();
+      } else if (activeCalc === 'mastermix') {
+        box.innerHTML = `
+          <div class="card" style="max-width:680px;">
+            <h3 class="card-title mb-2">PCR / qPCR Master Mix Calculator</h3>
+            <div class="grid-2 mb-2">
+              <div><label>Number of Reactions (incl. 10% excess)</label><input type="number" id="mm-rxns" class="input" value="12" oninput="calcMM()"></div>
+              <div><label>Total Reaction Volume (µL)</label><input type="number" id="mm-total" class="input" value="20" oninput="calcMM()"></div>
+            </div>
+            <div id="mm-output" class="mt-3"></div>
+          </div>
+        `;
+        calcMM();
+      } else if (activeCalc === 'digest') {
+        box.innerHTML = `
+          <div class="card" style="max-width:640px;">
+            <h3 class="card-title mb-2">Restriction Digestion Calculator</h3>
+            <div class="grid-3 mb-2">
+              <div><label>Plasmid Conc. (ng/µL)</label><input type="number" id="dig-conc" class="input" value="250" oninput="calcDigest()"></div>
+              <div><label>Desired DNA Mass (ng)</label><input type="number" id="dig-mass" class="input" value="1000" oninput="calcDigest()"></div>
+              <div><label>Total Reaction Vol (µL)</label><input type="number" id="dig-vol" class="input" value="20" oninput="calcDigest()"></div>
+            </div>
+            <div id="digest-output" class="mt-3"></div>
+          </div>
+        `;
+        calcDigest();
+      } else if (activeCalc === 'gel') {
+        box.innerHTML = `
+          <div class="card" style="max-width:600px;">
+            <h3 class="card-title mb-2">Agarose Gel Preparation</h3>
+            <div class="grid-2 mb-2">
+              <div><label>Gel Percentage (%)</label><input type="number" step="0.1" id="gel-pct" class="input" value="1.0" oninput="calcGel()"></div>
+              <div><label>Buffer Volume (mL)</label><input type="number" id="gel-vol" class="input" value="50" oninput="calcGel()"></div>
+            </div>
+            <div id="gel-output" class="mt-3"></div>
+          </div>
+        `;
+        calcGel();
+      } else {
+        box.innerHTML = `
+          <div class="card" style="max-width:640px;">
+            <h3 class="card-title mb-2">Stock Solution Dilution (C1V1 = C2V2)</h3>
+            <div class="grid-3 mb-2">
+              <div><label>Stock Conc. (C1)</label><input type="number" id="dil-c1" class="input" value="1000" oninput="calcDil()"></div>
+              <div><label>Desired Conc. (C2)</label><input type="number" id="dil-c2" class="input" value="50" oninput="calcDil()"></div>
+              <div><label>Final Volume (V2 in mL)</label><input type="number" id="dil-v2" class="input" value="100" oninput="calcDil()"></div>
+            </div>
+            <div id="dil-output" class="mt-3"></div>
+          </div>
+        `;
+        calcDil();
+      }
+    }
+
+    function calcQPCR() {
+      const ct1 = +document.getElementById('c-t1').value, ch1 = +document.getElementById('c-h1').value;
+      const ct2 = +document.getElementById('c-t2').value, ch2 = +document.getElementById('c-h2').value;
+      const tt1 = +document.getElementById('t-t1').value, th1 = +document.getElementById('t-h1').value;
+      const tt2 = +document.getElementById('t-t2').value, th2 = +document.getElementById('t-h2').value;
+
+      const dCtCtrl = ((ct1 - ch1) + (ct2 - ch2)) / 2;
+      const dCtTreat = ((tt1 - th1) + (tt2 - th2)) / 2;
+      const ddCt = dCtTreat - dCtCtrl;
+      const fold = Math.pow(2, -ddCt);
+      const barMax = Math.max(fold, 1.2);
+
+      document.getElementById('qpcr-output').innerHTML = `
+        <div class="flex-gap mb-3">
+          <span class="tag-pill">Control ΔCt: ${dCtCtrl.toFixed(2)}</span>
+          <span class="tag-pill">Treated ΔCt: ${dCtTreat.toFixed(2)}</span>
+          <span class="tag-pill tag-sage">Fold Change: ${fold.toFixed(2)}x</span>
+        </div>
+        <svg width="100%" height="210" viewBox="0 0 340 210">
+          <line x1="40" y1="170" x2="310" y2="170" stroke="#6E5D6B" stroke-width="1.5"/>
+          <line x1="40" y1="20" x2="40" y2="170" stroke="#6E5D6B" stroke-width="1.5"/>
+          <!-- Control Bar -->
+          <rect x="85" y="${170 - (1 / barMax) * 130}" width="65" height="${(1 / barMax) * 130}" rx="6" fill="#C9A0C4" stroke="#4A2545" stroke-width="1.5"/>
+          <text x="117" y="190" text-anchor="middle" font-size="12" fill="#2B1B28">Control (1.0)</text>
+          <!-- Treated Bar -->
+          <rect x="195" y="${170 - (fold / barMax) * 130}" width="65" height="${(fold / barMax) * 130}" rx="6" fill="#85B8C4" stroke="#4A2545" stroke-width="1.5"/>
+          <text x="227" y="190" text-anchor="middle" font-size="12" fill="#2B1B28">Treated (${fold.toFixed(2)}x)</text>
+        </svg>
+      `;
+    }
+
+    function calcSeeding() {
+      const stock = +document.getElementById('seed-stock').value || 1;
+      const target = +document.getElementById('seed-target').value || 0;
+      const wells = +document.getElementById('seed-wells').value || 0;
+      const volPerWell = +document.getElementById('seed-vol').value || 0;
+
+      const totalCells = target * wells;
+      const cellVolMl = totalCells / stock;
+      const totalMixMl = volPerWell * wells;
+      const mediaVolMl = Math.max(0, totalMixMl - cellVolMl);
+
+      document.getElementById('seeding-output').innerHTML = `
+        <div class="step-card completed">
+          <strong>Master Cell Suspension Recipe (${wells} wells):</strong>
+          <div class="mt-2">• Cell Suspension Volume: <strong>${(cellVolMl * 1000).toFixed(1)} µL</strong> (${cellVolMl.toFixed(3)} mL)</div>
+          <div>• Fresh Culture Media Volume: <strong>${mediaVolMl.toFixed(2)} mL</strong></div>
+          <div>• Total Final Mix: <strong>${totalMixMl.toFixed(2)} mL</strong></div>
+        </div>
+      `;
+    }
+
+    function calcMM() {
+      const n = +document.getElementById('mm-rxns').value || 1;
+      const tot = +document.getElementById('mm-total').value || 20;
+      const mm1x = tot * 0.5;
+      const fPrimer = tot * 0.05;
+      const rPrimer = tot * 0.05;
+      const template = tot * 0.1;
+      const water = tot - (mm1x + fPrimer + rPrimer + template);
+
+      document.getElementById('mm-output').innerHTML = `
+        <table>
+          <thead><tr><th>Component</th><th>1x Rxn (µL)</th><th>${n}x Master Mix (µL)</th></tr></thead>
+          <tbody>
+            <tr><td>2X Polymerase / SYBR Master Mix</td><td>${mm1x.toFixed(1)}</td><td><strong>${(mm1x * n).toFixed(1)}</strong></td></tr>
+            <tr><td>Forward Primer (10 µM)</td><td>${fPrimer.toFixed(1)}</td><td><strong>${(fPrimer * n).toFixed(1)}</strong></td></tr>
+            <tr><td>Reverse Primer (10 µM)</td><td>${rPrimer.toFixed(1)}</td><td><strong>${(rPrimer * n).toFixed(1)}</strong></td></tr>
+            <tr><td>Nuclease-Free Water</td><td>${water.toFixed(1)}</td><td><strong>${(water * n).toFixed(1)}</strong></td></tr>
+            <tr><td><em>Template DNA/cDNA (add per tube)</em></td><td><em>${template.toFixed(1)}</em></td><td><em>Add individually</em></td></tr>
+          </tbody>
+        </table>
+      `;
+    }
+
+    function calcDigest() {
+      const conc = +document.getElementById('dig-conc').value || 1;
+      const mass = +document.getElementById('dig-mass').value || 0;
+      const vol = +document.getElementById('dig-vol').value || 20;
+      const dnaVol = mass / conc;
+      const bufVol = vol * 0.1;
+      const enzVol = 1.0;
+      const water = Math.max(0, vol - dnaVol - bufVol - enzVol);
+
+      document.getElementById('digest-output').innerHTML = `
+        <div class="step-card completed">
+          <div>• Plasmid DNA (${mass} ng): <strong>${dnaVol.toFixed(2)} µL</strong></div>
+          <div>• 10X Restriction Buffer: <strong>${bufVol.toFixed(1)} µL</strong></div>
+          <div>• Restriction Enzyme: <strong>${enzVol.toFixed(1)} µL</strong></div>
+          <div>• Nuclease-Free Water: <strong>${water.toFixed(2)} µL</strong></div>
+        </div>
+      `;
+    }
+
+    function calcGel() {
+      const pct = +document.getElementById('gel-pct').value || 0;
+      const vol = +document.getElementById('gel-vol').value || 0;
+      const grams = (pct / 100) * vol;
+      document.getElementById('gel-output').innerHTML = `
+        <div class="step-card completed">
+          Weigh <strong>${grams.toFixed(2)} g</strong> of Agarose powder into <strong>${vol} mL</strong> of 1X TAE/TBE buffer.
+        </div>
+      `;
+    }
+
+    function calcDil() {
+      const c1 = +document.getElementById('dil-c1').value || 1;
+      const c2 = +document.getElementById('dil-c2').value || 0;
+      const v2 = +document.getElementById('dil-v2').value || 0;
+      const v1 = (c2 * v2) / c1;
+      document.getElementById('dil-output').innerHTML = `
+        <div class="step-card completed">
+          Add <strong>${v1.toFixed(3)} mL</strong> (${(v1 * 1000).toFixed(1)} µL) of stock to <strong>${(v2 - v1).toFixed(3)} mL</strong> of diluent.
+        </div>
+      `;
+    }
+
+    /* ==================== 5. CELL CULTURE ==================== */
+    function renderCulture() {
+      const grid = document.getElementById('cell-lines-grid');
+      const detail = document.getElementById('cell-detail-panel');
+
+      if (appState.cellLines.length === 0) {
+        grid.innerHTML = '';
+        detail.innerHTML = `
+          <div class="empty-state">
+            <h3 class="serif" style="color:var(--plum-dark);">No Active Cell Lines</h3>
+            <p>Add your active cell lines (e.g., HEK293T, Huh-7, Vero) to track passage numbers, confluency sparklines, and daily microscopy photos.</p>
+            <button class="btn btn-plum" onclick="openCellModal()">+ Add Cell Line</button>
+          </div>`;
+        return;
+      }
+
+      grid.innerHTML = appState.cellLines.map(cl => `
+        <div class="card" style="cursor:pointer;${cl.id === selectedCellLineId ? 'border:2px solid var(--plum-accent);' : ''}"
+             onclick="selectedCellLineId='${cl.id}';renderCulture()">
+          <div class="flex-between">
+            <h3 class="serif" style="font-size:1.25rem;color:var(--plum-dark);">${escapeHTML(cl.name)}</h3>
+            <span class="tag-pill ${cl.status === 'Healthy' ? 'tag-sage' : 'tag-amber'}">${escapeHTML(cl.status)}</span>
+          </div>
+          <div style="font-size:0.86rem;margin-top:6px;">Passage <strong>P${cl.passage}</strong> · ${escapeHTML(cl.media || 'DMEM + 10% FBS')}</div>
+          <div style="font-size:0.78rem;color:var(--ink-muted);margin-top:4px;">Last updated: ${cl.lastDate || todayISO()}</div>
+        </div>
+      `).join('');
+
+      const activeCL = appState.cellLines.find(c => c.id === selectedCellLineId) || appState.cellLines[0];
+      selectedCellLineId = activeCL.id;
+
+      detail.innerHTML = `
+        <div class="card">
+          <div class="flex-between mb-3">
+            <div>
+              <h3 class="serif" style="font-size:1.3rem;color:var(--plum-dark);">${escapeHTML(activeCL.name)} — Passage P${activeCL.passage}</h3>
+              <span style="font-size:0.83rem;color:var(--ink-muted);">${escapeHTML(activeCL.media)}</span>
+            </div>
+            <div class="flex-gap">
+              <button class="btn btn-sage btn-sm" onclick="passageCellLine('${activeCL.id}')">+1 Passage</button>
+              <button class="btn btn-plum btn-sm" onclick="openLogCellPhotoModal('${activeCL.id}')">+ Log Daily Photo & Confluency</button>
+              <button class="btn btn-sm" style="color:var(--rose);" onclick="deleteCellLine('${activeCL.id}')">Remove</button>
+            </div>
+          </div>
+
+          ${(!activeCL.logs || activeCL.logs.length === 0) ? `
+            <div class="empty-state">
+              <p>No daily microscopy photos or confluency logs yet for ${escapeHTML(activeCL.name)}.</p>
+              <button class="btn btn-plum btn-sm" onclick="openLogCellPhotoModal('${activeCL.id}')">+ Log First Observation</button>
+            </div>
+          ` : `
+            <div class="grid-3">
+              ${activeCL.logs.map(log => `
+                <div class="step-card">
+                  <div class="flex-between mb-2">
+                    <strong>${log.date}</strong>
+                    <span class="tag-pill">${log.confluency}% Confluent</span>
+                  </div>
+                  ${log.photo ? `<img src="${log.photo}" style="width:100%;height:150px;object-fit:cover;border-radius:10px;margin-bottom:8px;" />` : ''}
+                  <div class="progress-track mb-2"><div class="progress-fill" style="width:${log.confluency}%"></div></div>
+                  <div style="font-size:0.82rem;color:var(--ink-muted);">${escapeHTML(log.note || '')}</div>
+                </div>
+              `).join('')}
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    function openCellModal() {
+      openModal(`
+        <h3 class="serif mb-2" style="color:var(--plum-dark);">Add Cell Line</h3>
+        <label>Cell Line Name</label>
+        <input type="text" id="cl-name-in" class="input mb-2" placeholder="e.g., HEK293T, Huh-7, Vero" />
+        <div class="grid-2 mb-2">
+          <div><label>Current Passage #</label><input type="number" id="cl-pass-in" class="input" value="1" min="1" /></div>
+          <div><label>Status</label><select id="cl-stat-in" class="input"><option value="Healthy">Healthy</option><option value="Monitor">Monitor</option><option value="Contamination Flag">Contamination Flag</option></select></div>
+        </div>
+        <label>Growth Medium</label>
+        <input type="text" id="cl-media-in" class="input mb-3" value="DMEM + 10% FBS + 1% Pen-Strep" />
+        <div class="flex-gap" style="justify-content:flex-end;">
+          <button class="btn" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-plum" onclick="createCellLine()">Save Cell Line</button>
+        </div>
+      `);
+    }
+
+    function createCellLine() {
+      const name = document.getElementById('cl-name-in').value.trim();
+      if (!name) return;
+      const cl = {
+        id: String(Date.now()),
+        name,
+        passage: parseInt(document.getElementById('cl-pass-in').value || '1', 10),
+        status: document.getElementById('cl-stat-in').value,
+        media: document.getElementById('cl-media-in').value.trim(),
+        lastDate: todayISO(),
+        logs: []
+      };
+      appState.cellLines.push(cl);
+      selectedCellLineId = cl.id;
+      saveState();
+      logActivity('Cell Culture', `Added ${name} (P${cl.passage})`);
+      closeModal();
+      renderCulture();
+    }
+
+    function passageCellLine(id) {
+      const cl = appState.cellLines.find(c => c.id === id);
+      if (!cl) return;
+      cl.passage++;
+      cl.lastDate = todayISO();
+      cl.logs.unshift({ date: todayISO(), confluency: 20, note: `Passaged to P${cl.passage}`, photo: '' });
+      saveState();
+      logActivity('Cell Culture', `Passaged ${cl.name} to P${cl.passage}`);
+      renderCulture();
+    }
+
+    function openLogCellPhotoModal(id) {
+      openModal(`
+        <h3 class="serif mb-2" style="color:var(--plum-dark);">Log Daily Confluency & Microscopy Photo</h3>
+        <label>Date</label>
+        <input type="date" id="cl-log-date" class="input mb-2" value="${todayISO()}" />
+        <label>Estimated Confluency (%)</label>
+        <input type="number" id="cl-log-conf" class="input mb-2" value="70" min="0" max="100" />
+        <label>Microscopy Image (optional)</label>
+        <input type="file" id="cl-log-photo" accept="image/*" class="input mb-2" />
+        <label>Morphology Notes</label>
+        <input type="text" id="cl-log-note" class="input mb-3" placeholder="e.g., Cells healthy, ready for transfection" />
+        <div class="flex-gap" style="justify-content:flex-end;">
+          <button class="btn" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-plum" onclick="saveCellLog('${id}')">Save Entry</button>
+        </div>
+      `);
+    }
+
+    function saveCellLog(id) {
+      const cl = appState.cellLines.find(c => c.id === id);
+      if (!cl) return;
+      const entry = {
+        date: document.getElementById('cl-log-date').value || todayISO(),
+        confluency: parseInt(document.getElementById('cl-log-conf').value || '50', 10),
+        note: document.getElementById('cl-log-note').value.trim(),
+        photo: ''
+      };
+      const f = document.getElementById('cl-log-photo').files[0];
+      if (f) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          entry.photo = e.target.result;
+          cl.logs.unshift(entry);
+          cl.lastDate = entry.date;
+          saveState();
+          logActivity('Cell Culture', `Logged ${cl.name} (${entry.confluency}%)`);
+          closeModal();
+          renderCulture();
+        };
+        reader.readAsDataURL(f);
+      } else {
+        cl.logs.unshift(entry);
+        cl.lastDate = entry.date;
+        saveState();
+        logActivity('Cell Culture', `Logged ${cl.name} (${entry.confluency}%)`);
+        closeModal();
+        renderCulture();
+      }
+    }
+
+    function deleteCellLine(id) {
+      appState.cellLines = appState.cellLines.filter(c => c.id !== id);
+      selectedCellLineId = null;
+      saveState();
+      renderCulture();
+    }
+
+    /* ==================== 6. LAB NOTEBOOK & VOICE DICTATION ==================== */
+    function renderNotebook() {
+      renderNotebookList();
+      const reader = document.getElementById('notebook-reader-panel');
+      const note = appState.notes.find(n => n.id === selectedNoteId) || appState.notes[0];
+
+      if (!note) {
+        reader.innerHTML = `
+          <div class="empty-state">
+            <h3 class="serif" style="color:var(--plum-dark);">Lab Notebook</h3>
+            <p>Record dated bench observations, failed-run diagnostics, or dictate hands-free voice notes.</p>
+            <button class="btn btn-plum" onclick="openNoteModal()">+ Create First Entry</button>
+          </div>`;
+        return;
+      }
+
+      selectedNoteId = note.id;
+      reader.innerHTML = `
+        <div class="flex-between mb-2">
+          <div>
+            <span class="tag-pill">${escapeHTML(note.tag || 'Journal')}</span>
+            <span style="font-size:0.8rem;color:var(--ink-muted);margin-left:8px;">${note.date}</span>
+          </div>
+          <button class="btn btn-sm" style="color:var(--rose);" onclick="deleteNote('${note.id}')">Delete</button>
+        </div>
+        <h3 class="serif" style="font-size:1.4rem;color:var(--plum-dark);margin-bottom:12px;">${escapeHTML(note.title)}</h3>
+        <div style="white-space:pre-wrap;line-height:1.65;font-size:0.93rem;">${escapeHTML(note.body)}</div>
+        ${note.image ? `<img src="${note.image}" style="max-width:100%;max-height:280px;border-radius:12px;margin-top:14px;border:1px solid var(--card-border);" />` : ''}
+      `;
+    }
+
+    function renderNotebookList(filter = '') {
+      const list = document.getElementById('notebook-entries-list');
+      const q = filter.toLowerCase();
+      const filtered = appState.notes.filter(n => n.title.toLowerCase().includes(q) || n.body.toLowerCase().includes(q) || (n.tag || '').toLowerCase().includes(q));
+      if (filtered.length === 0) {
+        list.innerHTML = `<p style="font-size:0.83rem;color:var(--ink-muted);padding:10px 0;">No entries yet.</p>`;
+        return;
+      }
+      list.innerHTML = filtered.map(n => `
+        <div class="exp-mini-item" style="${n.id === selectedNoteId ? 'border-color:var(--plum-accent);background:#EFE3ED;' : ''}"
+             onclick="selectedNoteId='${n.id}';renderNotebook()">
+          <div style="font-weight:700;font-size:0.9rem;">${escapeHTML(n.title)}</div>
+          <div style="font-size:0.76rem;color:var(--ink-muted);">${n.date} · ${escapeHTML(n.tag || 'Journal')}</div>
+        </div>
+      `).join('');
+    }
+
+    function openNoteModal() {
+      openModal(`
+        <h3 class="serif mb-2" style="color:var(--plum-dark);">New Lab Notebook Entry</h3>
+        <label>Entry Title</label>
+        <input type="text" id="note-title-in" class="input mb-2" placeholder="e.g., Western Blot Troubleshooting & Buffer Notes" />
+        <label>Project / Tag</label>
+        <input type="text" id="note-tag-in" class="input mb-2" placeholder="e.g., NS5, Electroporation, qPCR" />
+        <div class="flex-between mb-1">
+          <label style="margin:0;">Observations & Notes</label>
+          <button type="button" class="btn btn-sm btn-sage" onclick="startVoiceDictation()">🎙 Voice Dictate</button>
+        </div>
+        <textarea id="note-body-in" rows="6" class="input mb-2" placeholder="Write or dictate your experimental observations..."></textarea>
+        <label>Attach Gel / Blot / Diagram Image (optional)</label>
+        <input type="file" id="note-img-in" accept="image/*" class="input mb-3" />
+        <div class="flex-gap" style="justify-content:flex-end;">
+          <button class="btn" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-plum" onclick="saveNote()">Save Entry</button>
+        </div>
+      `);
+    }
+
+    function startVoiceDictation() {
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRec) {
+        alert('Voice dictation is supported in Chrome, Edge, or Safari desktop browsers.');
+        return;
+      }
+      const rec = new SpeechRec();
+      rec.lang = 'en-US';
+      rec.onresult = (e) => {
+        const transcript = e.results[0][0].transcript;
+        const box = document.getElementById('note-body-in');
+        box.value = (box.value ? box.value + ' ' : '') + transcript;
+      };
+      rec.start();
+    }
+
+    function saveNote() {
+      const title = document.getElementById('note-title-in').value.trim();
+      if (!title) return;
+      const entry = {
+        id: String(Date.now()),
+        title,
+        tag: document.getElementById('note-tag-in').value.trim() || 'Journal',
+        body: document.getElementById('note-body-in').value.trim(),
+        date: todayISO(),
+        image: ''
+      };
+      const f = document.getElementById('note-img-in').files[0];
+      if (f) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          entry.image = e.target.result;
+          appState.notes.unshift(entry);
+          selectedNoteId = entry.id;
+          saveState();
+          logActivity('Notebook', `Logged "${title}"`);
+          closeModal();
+          renderNotebook();
+        };
+        reader.readAsDataURL(f);
+      } else {
+        appState.notes.unshift(entry);
+        selectedNoteId = entry.id;
+        saveState();
+        logActivity('Notebook', `Logged "${title}"`);
+        closeModal();
+        renderNotebook();
+      }
+    }
+
+    function deleteNote(id) {
+      appState.notes = appState.notes.filter(n => n.id !== id);
+      selectedNoteId = null;
+      saveState();
+      renderNotebook();
+    }
+
+    /* ==================== 7. REAGENTS & INVENTORY ==================== */
+    function isLowStock(r) { return Number(r.qty) <= Number(r.minQty || 1); }
+    function isExpiringSoon(r) {
+      if (!r.expiry) return false;
+      const diffDays = (new Date(r.expiry) - new Date()) / (1000 * 60 * 60 * 24);
+      return diffDays <= 30;
+    }
+
+    function renderInventory() {
+      const wrap = document.getElementById('inventory-table-wrap');
+      const cat = document.getElementById('inv-cat-filter').value;
+      const items = appState.reagents.filter(r => cat === 'All' || r.category === cat);
+
+      if (items.length === 0) {
+        wrap.innerHTML = `
+          <div class="empty-state">
+            <h3 class="serif" style="color:var(--plum-dark);">Reagent & Freezer Inventory</h3>
+            <p>Track buffers, enzymes, antibodies, plasmids, expiry dates, and exact freezer rack/box locations.</p>
+            <button class="btn btn-plum" onclick="openReagentModal()">+ Add First Reagent</button>
+          </div>`;
+        return;
+      }
+
+      wrap.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Reagent Name</th>
+              <th>Category</th>
+              <th>Volume / Unit</th>
+              <th>Expiry Date</th>
+              <th>Storage Location</th>
+              <th>Stock Qty</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${items.map(r => `
+              <tr>
+                <td><strong>${escapeHTML(r.name)}</strong></td>
+                <td><span class="tag-pill">${escapeHTML(r.category)}</span></td>
+                <td>${escapeHTML(r.unit || '-')}</td>
+                <td>
+                  ${r.expiry ? `<span class="tag-pill ${isExpiringSoon(r) ? 'tag-rose' : 'tag-sage'}">${r.expiry}</span>` : '—'}
+                </td>
+                <td>${escapeHTML(r.location || '-')}</td>
+                <td>
+                  <div class="flex-gap">
+                    <button class="btn btn-sm" onclick="adjustReagentQty('${r.id}', -1)">−</button>
+                    <strong style="min-width:24px;text-align:center;color:${isLowStock(r) ? 'var(--amber)' : 'inherit'};">${r.qty}</strong>
+                    <button class="btn btn-sm" onclick="adjustReagentQty('${r.id}', 1)">+</button>
+                  </div>
+                </td>
+                <td><button class="btn btn-sm" style="color:var(--rose);" onclick="deleteReagent('${r.id}')">✕</button></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function openReagentModal() {
+      openModal(`
+        <h3 class="serif mb-2" style="color:var(--plum-dark);">Add Reagent to Stock</h3>
+        <label>Reagent Name</label>
+        <input type="text" id="reg-name-in" class="input mb-2" placeholder="e.g., Invitrogen SuperScript IV, HEPES Buffer" />
+        <div class="grid-2 mb-2">
+          <div>
+            <label>Category</label>
+            <select id="reg-cat-in" class="input">
+              <option value="Buffers">Buffers</option>
+              <option value="Enzymes">Enzymes</option>
+              <option value="Antibodies">Antibodies</option>
+              <option value="Plasmids">Plasmids</option>
+              <option value="Media">Media & Sera</option>
+              <option value="Consumables">Consumables</option>
+            </select>
+          </div>
+          <div><label>Volume / Pack Size</label><input type="text" id="reg-unit-in" class="input" placeholder="e.g., 50 µL, 500 mL" /></div>
+        </div>
+        <div class="grid-3 mb-2">
+          <div><label>Current Stock Qty</label><input type="number" id="reg-qty-in" class="input" value="2" min="0" /></div>
+          <div><label>Low-Stock Alert At</label><input type="number" id="reg-min-in" class="input" value="1" min="0" /></div>
+          <div><label>Expiry Date</label><input type="date" id="reg-exp-in" class="input" /></div>
+        </div>
+        <label>Storage Location (Freezer / Rack / Box)</label>
+        <input type="text" id="reg-loc-in" class="input mb-3" placeholder="e.g., -20°C Freezer 2, Rack B, Box C" />
+        <div class="flex-gap" style="justify-content:flex-end;">
+          <button class="btn" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-plum" onclick="saveReagent()">Save Reagent</button>
+        </div>
+      `);
+    }
+
+    function saveReagent() {
+      const name = document.getElementById('reg-name-in').value.trim();
+      if (!name) return;
+      appState.reagents.unshift({
+        id: String(Date.now()),
+        name,
+        category: document.getElementById('reg-cat-in').value,
+        unit: document.getElementById('reg-unit-in').value.trim(),
+        qty: parseInt(document.getElementById('reg-qty-in').value || '1', 10),
+        minQty: parseInt(document.getElementById('reg-min-in').value || '1', 10),
+        expiry: document.getElementById('reg-exp-in').value,
+        location: document.getElementById('reg-loc-in').value.trim()
+      });
+      saveState();
+      logActivity('Inventory', `Added "${name}"`);
+      closeModal();
+      renderInventory();
+    }
+
+    function adjustReagentQty(id, delta) {
+      const r = appState.reagents.find(x => x.id === id);
+      if (r) {
+        r.qty = Math.max(0, Number(r.qty) + delta);
+        saveState();
+        renderInventory();
+      }
+    }
+
+    function deleteReagent(id) {
+      appState.reagents = appState.reagents.filter(x => x.id !== id);
+      saveState();
+      renderInventory();
+    }
+
+    /* ==================== 8. AI LAB ASSISTANT DRAWER ==================== */
+    function toggleAIDrawer(forceMode) {
+      const drawer = document.getElementById('ai-drawer');
+      if (forceMode) {
+        drawer.classList.add('open');
+        const tabBtn = document.querySelector(`.ai-tab-btn[data-aimode="${forceMode}"]`);
+        setAIMode(forceMode, tabBtn);
+      } else {
+        drawer.classList.toggle('open');
+      }
+    }
+
+    function setAIMode(mode, btn) {
+      currentAIMode = mode;
+      document.querySelectorAll('.ai-tab-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      const hints = {
+        ask: 'Ask questions across your recorded protocols, notes, and experiments.',
+        flowchart: 'Paste plain-text protocol steps below to convert them into an editable flowchart protocol.',
+        troubleshoot: 'Describe an issue or analyze your active experiment observations for troubleshooting ideas.',
+        recap: 'Generates a structured summary of your active experiment steps and observations.'
+      };
+      document.getElementById('ai-mode-hint').textContent = hints[mode] || '';
+    }
+
+    async function runAIAssistant() {
+      const apiKey = localStorage.getItem('labook_gemini_key') || '';
+      const promptIn = document.getElementById('ai-prompt-input');
+      const userText = promptIn.value.trim();
+      const feed = document.getElementById('ai-feed');
+
+      if (!apiKey) {
+        feed.innerHTML += `
+          <div class="ai-msg-box suggestion">
+            <span class="tag-pill tag-amber">Setup Required</span>
+            Please add your Gemini API key in <strong>Settings & Backup</strong> first so the AI assistant can process your request.
+          </div>`;
+        return;
+      }
+
+      if (!userText && currentAIMode !== 'recap') return;
+      promptIn.value = '';
+
+      const labContext = JSON.stringify({
+        protocols: appState.protocols.map(p => ({ title: p.title, tag: p.tag, steps: p.nodes.map(n => n.title) })),
+        experiments: appState.experiments.slice(0, 5),
+        notes: appState.notes.slice(0, 5).map(n => ({ title: n.title, date: n.date, body: n.body })),
+        reagents: appState.reagents.map(r => ({ name: r.name, qty: r.qty, location: r.location }))
+      });
+
+      let systemInstruction = 'You are a scientific molecular biology lab assistant. Always distinguish recorded lab data from AI-generated suggestions.';
+      if (currentAIMode === 'flowchart') {
+        systemInstruction = 'Convert the user protocol text into valid JSON ONLY (no markdown fences) with format: {"title":"Protocol Title","tag":"Category","nodes":[{"type":"action|decision|hold","title":"Step title","details":"Params","yesBranch":"","noBranch":"","timerSec":0,"reagents":""}]}';
+      } else if (currentAIMode === 'recap') {
+        systemInstruction = 'Compile a clean, objective scientific recap of the user experiments and observations provided in context.';
+      }
+
+      feed.innerHTML += `<div class="ai-msg-box"><span class="tag-pill">YOUR REQUEST</span>\n${escapeHTML(userText || 'Generate recap of current experiment')}</div>`;
+
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{ text: `${systemInstruction}\n\nRecorded Lab Data Context:\n${labContext}\n\nUser Input:\n${userText}` }]
+            }]
+          })
+        });
+        const data = await res.json();
+        const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'No response returned.';
+
+        if (currentAIMode === 'flowchart') {
+          try {
+            const cleanJson = reply.replace(/```json|```/g, '').trim();
+            const parsed = JSON.parse(cleanJson);
+            const newProto = {
+              id: String(Date.now()),
+              title: parsed.title || 'AI Generated Protocol',
+              tag: parsed.tag || 'General',
+              nodes: (parsed.nodes || []).map(n => ({ ...n, id: String(Date.now() + Math.random()), image: '' }))
+            };
+            appState.protocols.unshift(newProto);
+            selectedProtocolId = newProto.id;
+            saveState();
+            renderProtocols();
+            feed.innerHTML += `<div class="ai-msg-box suggestion"><span class="tag-pill tag-sage">FLOWCHART CREATED</span>\nCreated "${escapeHTML(newProto.title)}" with ${newProto.nodes.length} nodes on your Protocols canvas.</div>`;
+            return;
+          } catch (err) { /* Fall through to display text */ }
+        }
+
+        feed.innerHTML += `<div class="ai-msg-box suggestion"><span class="tag-pill">AI SUGGESTION</span>\n${escapeHTML(reply)}</div>`;
+        feed.scrollTop = feed.scrollHeight;
+      } catch (err) {
+        feed.innerHTML += `<div class="ai-msg-box suggestion"><span class="tag-pill tag-rose">Error</span>\nCould not reach Gemini API. Verify your API key in Settings.</div>`;
+      }
+    }
+
+    /* ==================== SETTINGS & BACKUP ==================== */
+    function saveApiKey() {
+      const val = document.getElementById('gemini-api-key-input').value.trim();
+      localStorage.setItem('labook_gemini_key', val);
+      document.getElementById('api-key-status').textContent = val ? 'Saved locally!' : 'Cleared.';
+    }
+
+    function exportFullBackup() {
+      const blob = new Blob([JSON.stringify(appState, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `labook-backup-${todayISO()}.json`;
+      a.click();
+    }
+
+    function importFullBackup(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const parsed = JSON.parse(ev.target.result);
+          appState = { ...structuredClone(defaultState), ...parsed };
+          saveState();
+          renderAll();
+          alert('Backup restored successfully!');
+        } catch (err) {
+          alert('Invalid JSON backup file.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    /* ==================== MODAL HELPERS & INIT ==================== */
+    function openModal(html) {
+      document.getElementById('modal-box').innerHTML = html;
+      document.getElementById('modal-backdrop').classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('modal-backdrop').classList.remove('open');
+    }
+
+    function renderAll() {
+      updateBadges();
+      renderHome();
+      renderProtocols();
+      renderExperiments();
+      renderCalculator();
+      renderCulture();
+      renderNotebook();
+      renderInventory();
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      document.getElementById('gemini-api-key-input').value = localStorage.getItem('labook_gemini_key') || '';
+      await initDB();
+      renderAll();
+    });
+  </script>
+</body>
+</html>
