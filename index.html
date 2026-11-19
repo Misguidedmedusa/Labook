@@ -2773,8 +2773,8 @@
       document.getElementById('ai-mode-hint').textContent = hints[mode] || '';
     }
 
-    async function runAIAssistant() {
-      const apiKey = localStorage.getItem('labook_gemini_key') || '';
+  async function runAIAssistant() {
+      const apiKey = (localStorage.getItem('labook_gemini_key') || '').trim();
       const promptIn = document.getElementById('ai-prompt-input');
       const userText = promptIn.value.trim();
       const feed = document.getElementById('ai-feed');
@@ -2783,7 +2783,7 @@
         feed.innerHTML += `
           <div class="ai-msg-box suggestion">
             <span class="tag-pill tag-amber">Setup Required</span>
-            Please add your Gemini API key in <strong>Settings & Backup</strong> first so the AI assistant can process your request.
+            Please add your Gemini API key in <strong>Settings & Backup</strong> first.
           </div>`;
         return;
       }
@@ -2792,6 +2792,7 @@
       promptIn.value = '';
 
       const labContext = JSON.stringify({
+        projects: (appState.projects || []).map(p => ({ name: p.name, status: p.status, description: p.description })),
         protocols: appState.protocols.map(p => ({ title: p.title, tag: p.tag, steps: p.nodes.map(n => n.title) })),
         experiments: appState.experiments.slice(0, 5),
         notes: appState.notes.slice(0, 5).map(n => ({ title: n.title, date: n.date, body: n.body })),
@@ -2800,50 +2801,80 @@
 
       let systemInstruction = 'You are a scientific molecular biology lab assistant. Always distinguish recorded lab data from AI-generated suggestions.';
       if (currentAIMode === 'flowchart') {
-        systemInstruction = 'Convert the user protocol text into valid JSON ONLY (no markdown fences) with format: {"title":"Protocol Title","tag":"Category","nodes":[{"type":"action|decision|hold","title":"Step title","details":"Params","yesBranch":"","noBranch":"","timerSec":0,"reagents":""}]}';
+        systemInstruction = 'Convert the user protocol text into valid JSON ONLY (no markdown fences) with format: {"title":"Protocol Title","tag":"Category","nodes":[{"type":"action","title":"Step title","details":"Params","yesBranch":"","noBranch":"","timerSec":0,"reagents":""}]}';
       } else if (currentAIMode === 'recap') {
         systemInstruction = 'Compile a clean, objective scientific recap of the user experiments and observations provided in context.';
       }
 
       feed.innerHTML += `<div class="ai-msg-box"><span class="tag-pill">YOUR REQUEST</span>\n${escapeHTML(userText || 'Generate recap of current experiment')}</div>`;
+      const loadId = 'ai-wait-' + Date.now();
+      feed.innerHTML += `<div id="${loadId}" class="ai-msg-box suggestion"><span class="tag-pill">THINKING...</span>\nContacting Gemini...</div>`;
+      feed.scrollTop = feed.scrollHeight;
 
-      try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [{ text: `${systemInstruction}\n\nRecorded Lab Data Context:\n${labContext}\n\nUser Input:\n${userText}` }]
-            }]
-          })
-        });
-        const data = await res.json();
-        const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'No response returned.';
+      const models = ['gemini-2.5-flash', 'gemini-2.0-flash'];
+      let data = null;
+      let lastError = '';
 
-        if (currentAIMode === 'flowchart') {
-          try {
-            const cleanJson = reply.replace(/```json|```/g, '').trim();
-            const parsed = JSON.parse(cleanJson);
-            const newProto = {
-              id: String(Date.now()),
-              title: parsed.title || 'AI Generated Protocol',
-              tag: parsed.tag || 'General',
-              nodes: (parsed.nodes || []).map(n => ({ ...n, id: String(Date.now() + Math.random()), image: '' }))
-            };
-            appState.protocols.unshift(newProto);
-            selectedProtocolId = newProto.id;
-            saveState();
-            renderProtocols();
-            feed.innerHTML += `<div class="ai-msg-box suggestion"><span class="tag-pill tag-sage">FLOWCHART CREATED</span>\nCreated "${escapeHTML(newProto.title)}" with ${newProto.nodes.length} nodes on your Protocols canvas.</div>`;
-            return;
-          } catch (err) { /* Fall through to display text */ }
+      for (const model of models) {
+        try {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': apiKey
+            },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{ text: `${systemInstruction}\n\nRecorded Lab Data Context:\n${labContext}\n\nUser Input:\n${userText}` }]
+              }]
+            })
+          });
+          const json = await res.json();
+          if (json.error) {
+            lastError = `${model}: ${json.error.message}`;
+            continue;
+          }
+          if (json.candidates && json.candidates[0]) {
+            data = json;
+            break;
+          }
+        } catch (e) {
+          lastError = e.message;
         }
-
-        feed.innerHTML += `<div class="ai-msg-box suggestion"><span class="tag-pill">AI SUGGESTION</span>\n${escapeHTML(reply)}</div>`;
-        feed.scrollTop = feed.scrollHeight;
-      } catch (err) {
-        feed.innerHTML += `<div class="ai-msg-box suggestion"><span class="tag-pill tag-rose">Error</span>\nCould not reach Gemini API. Verify your API key in Settings.</div>`;
       }
+
+      document.getElementById(loadId)?.remove();
+
+      if (!data) {
+        feed.innerHTML += `<div class="ai-msg-box suggestion"><span class="tag-pill tag-rose">API Error</span>\n${escapeHTML(lastError || 'Unknown error. Check your API key in Settings.')}</div>`;
+        feed.scrollTop = feed.scrollHeight;
+        return;
+      }
+
+      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Empty response.';
+
+      if (currentAIMode === 'flowchart') {
+        try {
+          const cleanJson = reply.replace(/```json|```/g, '').trim();
+          const parsed = JSON.parse(cleanJson);
+          const newProto = {
+            id: String(Date.now()),
+            title: parsed.title || 'AI Generated Protocol',
+            tag: parsed.tag || 'General',
+            nodes: (parsed.nodes || []).map(n => ({ ...n, id: String(Date.now() + Math.random()), image: '' }))
+          };
+          appState.protocols.unshift(newProto);
+          selectedProtocolId = newProto.id;
+          saveState();
+          renderProtocols();
+          feed.innerHTML += `<div class="ai-msg-box suggestion"><span class="tag-pill tag-sage">FLOWCHART CREATED</span>\nCreated "${escapeHTML(newProto.title)}" with ${newProto.nodes.length} nodes on your Protocols canvas!</div>`;
+          feed.scrollTop = feed.scrollHeight;
+          return;
+        } catch (err) { /* Fall through to display text */ }
+      }
+
+      feed.innerHTML += `<div class="ai-msg-box suggestion"><span class="tag-pill">AI SUGGESTION</span>\n${escapeHTML(reply)}</div>`;
+      feed.scrollTop = feed.scrollHeight;
     }
 
     /* ==================== SETTINGS & BACKUP ==================== */
