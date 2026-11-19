@@ -3726,27 +3726,33 @@ async function runAIAssistant() {
       closeModal();
       renderProtocols();
     }
-    /* ==================== CUTE EASTER EGGS & LABOOK MASCOTS ==================== */
+   /* ==================== CUTE EASTER EGGS & LABOOK MASCOTS ==================== */
     document.addEventListener("DOMContentLoaded", () => {
       injectConfettiStyles();
       setupInteractiveMascots();
       checkMidnightOwl();
       watchForExperimentCompletion();
+      watchForExperimentFailure();
     });
 
-    // 1. INJECT SPARKLING EFFECTS & CSS
+    // 1. INJECT SPARKLING & COMFORT EFFECTS CSS
     function injectConfettiStyles() {
       const style = document.createElement('style');
       style.innerHTML = `
         .easter-pet {
-          position: fixed; bottom: 8px; right: 14px; font-size: 1.3rem; cursor: pointer;
+          position: fixed; bottom: 10px; right: 14px; font-size: 1.3rem; cursor: pointer;
           user-select: none; transition: transform 0.2s; z-index: 9999; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
         }
         .easter-pet:hover { transform: scale(1.25) translateY(-2px); }
+        .easter-hug {
+          position: fixed; bottom: 11px; right: 48px; font-size: 1.15rem; cursor: pointer;
+          user-select: none; transition: transform 0.2s; z-index: 9999; opacity: 0.85;
+        }
+        .easter-hug:hover { transform: scale(1.25) rotate(-8deg); opacity: 1; }
         .mascot-bubble {
-          position: fixed; bottom: 35px; right: 14px; background: #FAF5EE; color: #4A2545;
-          border: 1.5px solid #6D3B65; border-radius: 12px; padding: 6px 10px; font-size: 0.72rem;
-          font-weight: 600; width: 170px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+          position: fixed; bottom: 42px; right: 14px; background: #FAF5EE; color: #4A2545;
+          border: 1.5px solid #6D3B65; border-radius: 14px; padding: 9px 12px; font-size: 0.76rem;
+          line-height: 1.4; font-weight: 600; width: 220px; box-shadow: 0 6px 16px rgba(74,37,69,0.14);
           animation: popBubble 0.3s ease-out; z-index: 9999;
         }
         @keyframes popBubble { from { transform: scale(0.6) translateY(10px); opacity:0; } to { transform: scale(1) translateY(0); opacity:1; } }
@@ -3758,11 +3764,20 @@ async function runAIAssistant() {
           0% { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
           100% { transform: translateY(-70px) translateX(var(--rx)) scale(0.3) rotate(360deg); opacity: 0; }
         }
+        .comfort-float {
+          position: fixed; pointer-events: none; font-size: 1.35rem;
+          animation: floatComfort 2.4s ease-out forwards; z-index: 10000;
+        }
+        @keyframes floatComfort {
+          0% { transform: translateY(0) scale(0.7); opacity: 0; }
+          20% { opacity: 1; }
+          100% { transform: translateY(-140px) translateX(var(--rx)) scale(1.2); opacity: 0; }
+        }
       `;
       document.head.appendChild(style);
     }
 
-    // 2. SPARKLING CONFETTI CELEBRATION (Triggered on checkoff)
+    // 2. SPARKLING CONFETTI CELEBRATION (Triggered on step checkoff)
     function triggerSuccessConfetti() {
       const colors = ['#6D3B65', '#6F9173', '#C48234', '#E5B78A', '#85B8C4', '#D595B4'];
       for (let i = 0; i < 60; i++) {
@@ -3779,95 +3794,130 @@ async function runAIAssistant() {
       }
     }
 
-    // Capture checkoffs & launch confetti
+    // 3. WARM COMFORT SHOWER (Triggered on failed experiment or hug button)
+    function triggerFailureComfort() {
+      const icons = ['🍵', '💛', '🌱', '✨', '🫂', '🍪'];
+      for (let i = 0; i < 18; i++) {
+        const el = document.createElement('div');
+        el.className = 'comfort-float';
+        el.textContent = icons[Math.floor(Math.random() * icons.length)];
+        el.style.setProperty('--rx', `${(Math.random() - 0.5) * 90}px`);
+        el.style.left = `${Math.random() * 85 + 8}vw`;
+        el.style.top = `${Math.random() * 40 + 50}vh`;
+        el.style.animationDelay = `${Math.random() * 0.4}s`;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 2600);
+      }
+
+      const pepTalks = [
+        "Negative data is STILL real data! You just ruled out one path—now you're closer to the one that works. 🍵💛",
+        "Even Nobel laureates had blank gels and noisy Ct curves. Take a deep breath, grab chai/coffee, and be gentle with yourself! 🫂🌱",
+        "Your cells are just being dramatic today—your effort wasn't wasted, you learned something new about the system! ✨🧪",
+        "Protocol plot twist! Write down what happened, close the bench for a bit, and come back fresh. You've got this! 💪💛",
+        "Tiny tardigrade sends a giant microscopic hug! One messy run never defines a brilliant scientist. 🐾✨"
+      ];
+      showMascotWords(pepTalks[Math.floor(Math.random() * pepTalks.length)], 6500);
+    }
+
     function watchForExperimentCompletion() {
       document.addEventListener('change', (e) => {
         if (e.target && e.target.type === 'checkbox' && e.target.checked) {
           const card = e.target.closest('.step-card, .grid');
           if (card) {
             triggerSuccessConfetti();
-            showMascotWords("Yay! Task completed! Tiny victories make giant breakthroughs! ✨🔬");
+            showMascotWords("Yay! Step completed! Tiny victories make giant breakthroughs! ✨🔬");
           }
         }
       });
     }
 
-    // 3. THE "TINY WATER BEAR" (PET) & MASCOT DIALOGUES
+    // Automatically detects when an experiment status is changed to Failed / Troubleshoot
+    function watchForExperimentFailure() {
+      document.addEventListener('change', (e) => {
+        if (e.target && e.target.tagName === 'SELECT') {
+          const val = (e.target.value || '').toLowerCase();
+          if (val.includes('fail') || val.includes('troubleshoot') || val.includes('abort')) {
+            triggerFailureComfort();
+          }
+        }
+      });
+    }
+
+    // 4. THE "TINY WATER BEAR" (PET), LAB HUG BUTTON & MASCOT DIALOGUES
     function setupInteractiveMascots() {
-      // Create Tiny Tardigrade (Water bear) in corner
       const pet = document.createElement('div');
       pet.className = 'easter-pet';
       pet.innerHTML = '🐾';
-      pet.title = "Pet the Invisible Lab Mascot!";
+      pet.title = "Pet the Tiny Water Bear!";
       document.body.appendChild(pet);
+
+      const hugBtn = document.createElement('div');
+      hugBtn.className = 'easter-hug';
+      hugBtn.innerHTML = '🩹';
+      hugBtn.title = "Rough experiment? Click for a science pep talk!";
+      document.body.appendChild(hugBtn);
+
+      hugBtn.addEventListener('click', () => {
+        triggerFailureComfort();
+      });
 
       const dialogues = [
         "Tiny water bear is here to keep your cultures cozy! 🦠💖",
         "Your scientific replicates will look amazing, trust the process!",
         "Double-check your buffer calculations, just in case! 🧠🧪",
-        "Don't worry about standard deviation, failures are stepping stones!",
-        "Tiny tardigrade waves at you. 🌊 He loves biology!",
+        "Tiny tardigrade waves at you. 🌊 He loves molecular biology!",
         "Are we splitting cells today? Count me in! 🧫",
-        "Make sure you get some coffee (or tea!) 🍵",
-        "Lab ghosts are inspecting your workflow... looking flawless!"
+        "Make sure you drink some water or grab a warm drink! 🍵"
       ];
 
       pet.addEventListener('click', () => {
         pet.innerHTML = '✨🐾✨';
         setTimeout(() => { pet.innerHTML = '🐾'; }, 400);
-        const speech = dialogues[Math.floor(Math.random() * dialogues.length)];
-        showMascotWords(speech);
+        showMascotWords(dialogues[Math.floor(Math.random() * dialogues.length)]);
       });
 
-      // CLICK FLASK FOR HAPPY/GRUMPY MASCOT MOOD
       const logo = document.querySelector('.sidebar-brand') || document.querySelector('h1');
       if (logo) {
         logo.style.cursor = 'pointer';
         logo.addEventListener('click', () => {
-          const moods = ['🥰 (Happy Bubbles!)', '😴 (Inoculating...)', '🧐 (Analyzing Data)', '🤯 (Spike in Results!)', '🤬 (Autoclave Error?)'];
+          const moods = ['🥰 (Happy Bubbles!)', '😴 (Incubating...)', '🧐 (Analyzing Ct Values)', '🤩 (Clean Gel Bands!)', '🍵 (Tea Break Needed)'];
           const picked = moods[Math.floor(Math.random() * moods.length)];
           showMascotWords(`Flask Mood: ${picked} — Bring on the research! 🧪`);
-          
-          // Shaking Logo effect
-          logo.style.transform = 'scale(1.1) rotate(5deg)';
+          logo.style.transform = 'scale(1.06) rotate(3deg)';
           setTimeout(() => logo.style.transform = 'scale(1) rotate(0deg)', 200);
         });
       }
     }
 
-    function showMascotWords(text) {
+    function showMascotWords(text, duration = 4500) {
       document.querySelector('.mascot-bubble')?.remove();
       const bubble = document.createElement('div');
       bubble.className = 'mascot-bubble';
       bubble.innerHTML = text;
       document.body.appendChild(bubble);
-      setTimeout(() => { bubble.style.opacity = '0'; setTimeout(() => bubble.remove(), 300); }, 4500);
+      setTimeout(() => { bubble.style.opacity = '0'; setTimeout(() => bubble.remove(), 300); }, duration);
     }
 
-    // 4. THE MIDNIGHT OWL 🦉💤 (Active ONLY from 10 PM to 5 AM)
+    // 5. THE MIDNIGHT OWL 🦉💤 (Active ONLY from 10 PM to 5 AM)
     function checkMidnightOwl() {
       const hr = new Date().getHours();
-      // Test at late night: after 10 PM (22) or before 5 AM (5)
       if (hr >= 22 || hr < 5) {
-        const topBar = document.querySelector('.search-container') || document.body;
         const owl = document.createElement('div');
-        owl.style.cssText = 'position:fixed; top:12px; right:120px; font-size:1.15rem; cursor:help; z-index:999; animation: float 3s ease-in-out infinite;';
+        owl.style.cssText = 'position:fixed; top:14px; right:140px; font-size:1.15rem; cursor:pointer; z-index:999;';
         owl.innerHTML = '🦉💤';
-        owl.title = "Night owl spot! Tap for scientific words of support.";
-        
+        owl.title = "Night owl mode! Tap for late-night encouragement.";
+
         const nightQuotes = [
-          "Night owls splits the finest cells! 🌙 Just don't skip sleep.",
+          "Night owls split the finest cells! 🌙 Just don't skip sleep.",
           "PhD means 'Patiently Harnessing Darkness' 🍵 Take a sip of water!",
           "Cells: 'We want to grow in peace, please go home and rest now!' 😴",
-          "One last replicate... then call it a day! You've worked so hard.",
-          "Lab ghosts are cheering your midnight dedication. 🦉✨"
+          "One last replicate... then call it a day! You've worked so hard. 🦉✨"
         ];
-        
+
         owl.addEventListener('click', () => {
-          const q = nightQuotes[Math.floor(Math.random() * nightQuotes.length)];
-          showMascotWords(q);
+          showMascotWords(nightQuotes[Math.floor(Math.random() * nightQuotes.length)]);
         });
-        topBar.appendChild(owl);
+        document.body.appendChild(owl);
       }
     }
   </script>
