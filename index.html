@@ -1063,6 +1063,7 @@
           <h2 class="page-title">Protocols Studio</h2>
           <div class="flex-gap">
             <button class="btn" onclick="toggleAIDrawer('flowchart')">AI Text → Flowchart</button>
+           <button class="btn" onclick="openImportProtocolModal()">📋 Paste / Import Protocol</button>
             <button class="btn btn-plum" onclick="openNewProtocolModal()">+ New Flowchart Protocol</button>
           </div>
         </div>
@@ -3300,6 +3301,152 @@ async function runAIAssistant() {
 
     const _prevRenderAllProj = renderAll;
     renderAll = function() { _prevRenderAllProj(); renderProjects(); };
+/* ==================== OFFLINE PASTE / IMPORT PROTOCOL ENGINE ==================== */
+    function openImportProtocolModal() {
+      const promptHelper = `Create a lab protocol for [YOUR EXPERIMENT] in this exact format so I can import it directly into my Labook flowchart:\n\nTITLE: Protocol Name\nTAG: Category\nSTEP: Step title | Detailed volumes, temp, buffer | 0 min | Reagents comma separated\nDECISION: Checkpoint question | If YES path | If NO path\nHOLD: Safe stop / storage point | Storage temp & duration`;
+
+      openModal(`
+        <h3 class="serif mb-2" style="color:var(--plum-dark);">Paste Protocol from ChatGPT / Gemini</h3>
+        <p style="font-size:0.82rem;color:var(--ink-muted);margin-bottom:10px;">
+          Paste any numbered list of steps OR use the structured AI prompt below for automatic timers, decision branches & reagents.
+        </p>
+
+        <div class="step-card mb-2" style="background:#FAF5EE;">
+          <div class="flex-between mb-1">
+            <strong style="font-size:0.8rem;color:var(--plum-dark);">1. Copy this prompt to ask ChatGPT / Gemini:</strong>
+            <button type="button" class="btn btn-sm btn-sage" onclick="copyAIPromptTemplate(this)">Copy AI Prompt</button>
+          </div>
+          <textarea id="ai-template-box" rows="3" class="input" readonly style="font-size:0.76rem;">${escapeHTML(promptHelper)}</textarea>
+        </div>
+
+        <label>2. Paste Protocol Text Here</label>
+        <input type="text" id="imp-proto-title" class="input mb-2" placeholder="Protocol Title (auto-detected if TITLE: is present)" />
+        <input type="text" id="imp-proto-tag" class="input mb-2" placeholder="Category / Tag (e.g., Cloning, qPCR, Cell Culture)" />
+        <textarea id="imp-proto-raw" rows="7" class="input mb-3" placeholder="Paste numbered steps (1. ..., 2. ...) or structured STEP: / DECISION: / HOLD: lines here..."></textarea>
+
+        <div class="flex-gap" style="justify-content:flex-end;">
+          <button class="btn" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-plum" onclick="parseAndCreateImportedProtocol()">Generate Flowchart</button>
+        </div>
+      `);
+    }
+
+    function copyAIPromptTemplate(btn) {
+      const box = document.getElementById('ai-template-box');
+      if (!box) return;
+      navigator.clipboard.writeText(box.value);
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy AI Prompt'; }, 1800);
+    }
+
+    function parseAndCreateImportedProtocol() {
+      const raw = document.getElementById('imp-proto-raw').value.trim();
+      if (!raw) return;
+
+      let title = document.getElementById('imp-proto-title').value.trim();
+      let tag = document.getElementById('imp-proto-tag').value.trim();
+      const nodes = [];
+
+      const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+      lines.forEach(line => {
+        if (/^TITLE\s*:/i.test(line)) {
+          if (!title) title = line.replace(/^TITLE\s*:/i, '').trim();
+          return;
+        }
+        if (/^TAG\s*:/i.test(line)) {
+          if (!tag) tag = line.replace(/^TAG\s*:/i, '').trim();
+          return;
+        }
+
+        // Structured DECISION: Question | Yes | No
+        if (/^DECISION\s*:/i.test(line)) {
+          const parts = line.replace(/^DECISION\s*:/i, '').split('|').map(s => s.trim());
+          nodes.push({
+            id: String(Date.now() + Math.random()),
+            type: 'decision',
+            title: parts[0] || 'Decision Checkpoint',
+            details: '',
+            yesBranch: parts[1] || 'Proceed',
+            noBranch: parts[2] || 'Repeat / Troubleshoot',
+            timerSec: 0,
+            reagents: '',
+            image: ''
+          });
+          return;
+        }
+
+        // Structured HOLD: Title | Details
+        if (/^HOLD\s*:/i.test(line)) {
+          const parts = line.replace(/^HOLD\s*:/i, '').split('|').map(s => s.trim());
+          nodes.push({
+            id: String(Date.now() + Math.random()),
+            type: 'hold',
+            title: parts[0] || 'Safe Stop / Hold',
+            details: parts[1] || '',
+            yesBranch: '',
+            noBranch: '',
+            timerSec: 0,
+            reagents: '',
+            image: ''
+          });
+          return;
+        }
+
+        // Structured STEP: Title | Details | Timer | Reagents
+        if (/^STEP\s*:/i.test(line)) {
+          const parts = line.replace(/^STEP\s*:/i, '').split('|').map(s => s.trim());
+          const minMatch = (parts[2] || '').match(/(\d+)/);
+          nodes.push({
+            id: String(Date.now() + Math.random()),
+            type: 'action',
+            title: parts[0] || 'Protocol Step',
+            details: parts[1] || '',
+            yesBranch: '',
+            noBranch: '',
+            timerSec: minMatch ? parseInt(minMatch[1], 10) * 60 : 0,
+            reagents: parts[3] || '',
+            image: ''
+          });
+          return;
+        }
+
+        // Fallback: Any plain numbered/bulleted line from ChatGPT/Gemini
+        const cleaned = line.replace(/^(\d+[\.\)]\s*|[-*•]\s*)/, '').trim();
+        if (cleaned) {
+          const timeDetect = cleaned.match(/(\d+)\s*(min|mins|minutes)/i);
+          nodes.push({
+            id: String(Date.now() + Math.random()),
+            type: 'action',
+            title: cleaned.length > 75 ? cleaned.slice(0, 72) + '...' : cleaned,
+            details: cleaned.length > 75 ? cleaned : '',
+            yesBranch: '',
+            noBranch: '',
+            timerSec: timeDetect ? parseInt(timeDetect[1], 10) * 60 : 0,
+            reagents: '',
+            image: ''
+          });
+        }
+      });
+
+      if (nodes.length === 0) return;
+
+      const newProto = {
+        id: String(Date.now()),
+        title: title || 'Imported Protocol',
+        tag: tag || 'General',
+        versions: [],
+        paperIds: [],
+        nodes
+      };
+
+      appState.protocols.unshift(newProto);
+      selectedProtocolId = newProto.id;
+      saveState();
+      logActivity('Protocol', `Imported "${newProto.title}"`);
+      closeModal();
+      renderProtocols();
+    }
   </script>
 </body>
 </html>
