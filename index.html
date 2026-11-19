@@ -2190,227 +2190,127 @@
 
     function renderCalculator() {
       const box = document.getElementById('calculator-container');
-     if (activeCalc === 'qpcr') {
-        if (!window._qpcrState) {
-          window._qpcrState = {
-            targetGene: 'ISG15',
-            refGene: 'GAPDH',
-            controlIndex: 0,
-            groups: [
-              { name: 'Mock / Control', targetCts: '24.2, 24.4, 24.3', refCts: '18.1, 18.2, 18.1' },
-              { name: 'IFN-α Treated', targetCts: '20.5, 20.7, 20.6', refCts: '18.0, 18.2, 18.1' },
-              { name: 'NS5 + IFN-α', targetCts: '23.1, 23.3, 23.2', refCts: '18.1, 18.1, 18.2' }
-            ]
-          };
-        }
-        const st = window._qpcrState;
-
+      if (activeCalc === 'qpcr') {
         box.innerHTML = `
-          <div class="grid-2" style="align-items:start;">
+          <div class="grid-2">
             <div class="card">
-              <div class="flex-between mb-2">
-                <h3 class="card-title">Custom qPCR ΔΔCt Setup</h3>
-                <button class="btn btn-plum btn-sm" onclick="addQPCRGroup()">+ Add Condition</button>
-              </div>
-
-              <div class="grid-3 mb-3">
-                <div>
-                  <label>Target Gene</label>
-                  <input type="text" class="input" value="${escapeHTML(st.targetGene)}" oninput="window._qpcrState.targetGene=this.value;calcQPCR()" placeholder="e.g., ISG15" />
-                </div>
-                <div>
-                  <label>Housekeeping Gene</label>
-                  <input type="text" class="input" value="${escapeHTML(st.refGene)}" oninput="window._qpcrState.refGene=this.value;calcQPCR()" placeholder="e.g., GAPDH" />
-                </div>
-                <div>
-                  <label>Calibrator (1.0x Control)</label>
-                  <select class="input" onchange="window._qpcrState.controlIndex=parseInt(this.value,10);calcQPCR()">
-                    ${st.groups.map((g, idx) => `<option value="${idx}" ${idx === st.controlIndex ? 'selected' : ''}>${escapeHTML(g.name || 'Group ' + (idx+1))}</option>`).join('')}
-                  </select>
-                </div>
-              </div>
-
-              <div style="font-size:0.78rem;color:var(--ink-muted);margin-bottom:8px;">
-                Enter technical replicate Ct values separated by commas (supports 2, 3, or more replicates per condition).
-              </div>
-
+              <h3 class="card-title mb-2">qPCR ΔΔCt Raw Input</h3>
               <table>
-                <thead>
-                  <tr>
-                    <th>Condition / Sample</th>
-                    <th>${escapeHTML(st.targetGene || 'Target')} Ct (reps)</th>
-                    <th>${escapeHTML(st.refGene || 'Ref')} Ct (reps)</th>
-                    <th></th>
-                  </tr>
-                </thead>
+                <thead><tr><th>Condition</th><th>Target Gene Ct</th><th>Housekeeping Ct</th></tr></thead>
                 <tbody>
-                  ${st.groups.map((g, idx) => `
-                    <tr>
-                      <td>
-                        <input type="text" class="input" value="${escapeHTML(g.name)}"
-                               onchange="window._qpcrState.groups[${idx}].name=this.value;renderCalculator()" placeholder="Condition name" />
-                      </td>
-                      <td>
-                        <input type="text" class="input" value="${escapeHTML(g.targetCts)}"
-                               oninput="window._qpcrState.groups[${idx}].targetCts=this.value;calcQPCR()" placeholder="e.g., 22.1, 22.3, 22.2" />
-                      </td>
-                      <td>
-                        <input type="text" class="input" value="${escapeHTML(g.refCts)}"
-                               oninput="window._qpcrState.groups[${idx}].refCts=this.value;calcQPCR()" placeholder="e.g., 18.0, 18.1, 18.0" />
-                      </td>
-                      <td>
-                        ${st.groups.length > 2 ? `<button class="btn btn-sm" style="color:var(--rose);" onclick="removeQPCRGroup(${idx})">✕</button>` : ''}
-                      </td>
-                    </tr>
-                  `).join('')}
+                  <tr><td>Control (Rep 1)</td><td><input type="number" step="0.01" id="c-t1" class="input" value="24.2"></td><td><input type="number" step="0.01" id="c-h1" class="input" value="18.1"></td></tr>
+                  <tr><td>Control (Rep 2)</td><td><input type="number" step="0.01" id="c-t2" class="input" value="24.4"></td><td><input type="number" step="0.01" id="c-h2" class="input" value="18.2"></td></tr>
+                  <tr><td>Treated (Rep 1)</td><td><input type="number" step="0.01" id="t-t1" class="input" value="21.5"></td><td><input type="number" step="0.01" id="t-h1" class="input" value="18.0"></td></tr>
+                  <tr><td>Treated (Rep 2)</td><td><input type="number" step="0.01" id="t-t2" class="input" value="21.7"></td><td><input type="number" step="0.01" id="t-h2" class="input" value="18.2"></td></tr>
                 </tbody>
               </table>
-
-              <div class="flex-gap mt-3">
-                <button class="btn btn-plum" onclick="calcQPCR()">Recalculate</button>
-                <button class="btn btn-sm" onclick="exportQPCRCSV()">Export CSV Table</button>
-              </div>
+              <button class="btn btn-plum mt-3" onclick="calcQPCR()">Calculate Fold Change</button>
             </div>
-
             <div class="card">
-              <div class="flex-between mb-2">
-                <h3 class="card-title">Relative Expression (${escapeHTML(st.targetGene || 'Target')} / ${escapeHTML(st.refGene || 'Ref')})</h3>
-              </div>
+              <h3 class="card-title mb-2">Relative Fold Change (2^-ΔΔCt)</h3>
               <div id="qpcr-output"></div>
             </div>
           </div>
         `;
         calcQPCR();
       } else if (activeCalc === 'seeding') {
-       function addQPCRGroup() {
-      const idx = window._qpcrState.groups.length + 1;
-      window._qpcrState.groups.push({ name: `Condition ${idx}`, targetCts: '22.0, 22.2, 22.1', refCts: '18.0, 18.1, 18.0' });
-      renderCalculator();
-    }
-
-    function removeQPCRGroup(idx) {
-      window._qpcrState.groups.splice(idx, 1);
-      if (window._qpcrState.controlIndex >= window._qpcrState.groups.length) {
-        window._qpcrState.controlIndex = 0;
+        box.innerHTML = `
+          <div class="card" style="max-width:640px;">
+            <h3 class="card-title mb-2">Cell Culture Seeding Calculator</h3>
+            <div class="grid-2 mb-2">
+              <div><label>Stock Cell Count (cells/mL)</label><input type="number" id="seed-stock" class="input" value="1200000" oninput="calcSeeding()"></div>
+              <div><label>Target Cells per Well</label><input type="number" id="seed-target" class="input" value="200000" oninput="calcSeeding()"></div>
+              <div><label>Number of Wells (incl. extra)</label><input type="number" id="seed-wells" class="input" value="6.5" step="0.5" oninput="calcSeeding()"></div>
+              <div><label>Total Volume per Well (mL)</label><input type="number" id="seed-vol" class="input" value="2" step="0.1" oninput="calcSeeding()"></div>
+            </div>
+            <div id="seeding-output" class="mt-3"></div>
+          </div>
+        `;
+        calcSeeding();
+      } else if (activeCalc === 'mastermix') {
+        box.innerHTML = `
+          <div class="card" style="max-width:680px;">
+            <h3 class="card-title mb-2">PCR / qPCR Master Mix Calculator</h3>
+            <div class="grid-2 mb-2">
+              <div><label>Number of Reactions (incl. 10% excess)</label><input type="number" id="mm-rxns" class="input" value="12" oninput="calcMM()"></div>
+              <div><label>Total Reaction Volume (µL)</label><input type="number" id="mm-total" class="input" value="20" oninput="calcMM()"></div>
+            </div>
+            <div id="mm-output" class="mt-3"></div>
+          </div>
+        `;
+        calcMM();
+      } else if (activeCalc === 'digest') {
+        box.innerHTML = `
+          <div class="card" style="max-width:640px;">
+            <h3 class="card-title mb-2">Restriction Digestion Calculator</h3>
+            <div class="grid-3 mb-2">
+              <div><label>Plasmid Conc. (ng/µL)</label><input type="number" id="dig-conc" class="input" value="250" oninput="calcDigest()"></div>
+              <div><label>Desired DNA Mass (ng)</label><input type="number" id="dig-mass" class="input" value="1000" oninput="calcDigest()"></div>
+              <div><label>Total Reaction Vol (µL)</label><input type="number" id="dig-vol" class="input" value="20" oninput="calcDigest()"></div>
+            </div>
+            <div id="digest-output" class="mt-3"></div>
+          </div>
+        `;
+        calcDigest();
+      } else if (activeCalc === 'gel') {
+        box.innerHTML = `
+          <div class="card" style="max-width:600px;">
+            <h3 class="card-title mb-2">Agarose Gel Preparation</h3>
+            <div class="grid-2 mb-2">
+              <div><label>Gel Percentage (%)</label><input type="number" step="0.1" id="gel-pct" class="input" value="1.0" oninput="calcGel()"></div>
+              <div><label>Buffer Volume (mL)</label><input type="number" id="gel-vol" class="input" value="50" oninput="calcGel()"></div>
+            </div>
+            <div id="gel-output" class="mt-3"></div>
+          </div>
+        `;
+        calcGel();
+      } else {
+        box.innerHTML = `
+          <div class="card" style="max-width:640px;">
+            <h3 class="card-title mb-2">Stock Solution Dilution (C1V1 = C2V2)</h3>
+            <div class="grid-3 mb-2">
+              <div><label>Stock Conc. (C1)</label><input type="number" id="dil-c1" class="input" value="1000" oninput="calcDil()"></div>
+              <div><label>Desired Conc. (C2)</label><input type="number" id="dil-c2" class="input" value="50" oninput="calcDil()"></div>
+              <div><label>Final Volume (V2 in mL)</label><input type="number" id="dil-v2" class="input" value="100" oninput="calcDil()"></div>
+            </div>
+            <div id="dil-output" class="mt-3"></div>
+          </div>
+        `;
+        calcDil();
       }
-      renderCalculator();
-    }
-
-    function parseCtList(str) {
-      return String(str || '').split(',').map(v => parseFloat(v.trim())).filter(v => !isNaN(v));
     }
 
     function calcQPCR() {
-      const st = window._qpcrState;
-      const out = document.getElementById('qpcr-output');
-      if (!st || !out) return;
+      const ct1 = +document.getElementById('c-t1').value, ch1 = +document.getElementById('c-h1').value;
+      const ct2 = +document.getElementById('c-t2').value, ch2 = +document.getElementById('c-h2').value;
+      const tt1 = +document.getElementById('t-t1').value, th1 = +document.getElementById('t-h1').value;
+      const tt2 = +document.getElementById('t-t2').value, th2 = +document.getElementById('t-h2').value;
 
-      const parsedGroups = st.groups.map(g => {
-        const tArr = parseCtList(g.targetCts);
-        const rArr = parseCtList(g.refCts);
-        const tMean = tArr.length ? tArr.reduce((a, b) => a + b, 0) / tArr.length : NaN;
-        const rMean = rArr.length ? rArr.reduce((a, b) => a + b, 0) / rArr.length : NaN;
-        const dCt = tMean - rMean;
+      const dCtCtrl = ((ct1 - ch1) + (ct2 - ch2)) / 2;
+      const dCtTreat = ((tt1 - th1) + (tt2 - th2)) / 2;
+      const ddCt = dCtTreat - dCtCtrl;
+      const fold = Math.pow(2, -ddCt);
+      const barMax = Math.max(fold, 1.2);
 
-        // Paired replicate ΔCt SD if counts match, otherwise combined SD
-        let dCtSD = 0;
-        if (tArr.length > 1 && tArr.length === rArr.length) {
-          const repDCts = tArr.map((t, i) => t - rArr[i]);
-          const m = repDCts.reduce((a, b) => a + b, 0) / repDCts.length;
-          dCtSD = Math.sqrt(repDCts.reduce((s, x) => s + Math.pow(x - m, 2), 0) / (repDCts.length - 1));
-        }
-        return { name: g.name || 'Unnamed', tMean, rMean, dCt, dCtSD, n: Math.min(tArr.length, rArr.length) };
-      });
-
-      const ctrl = parsedGroups[st.controlIndex] || parsedGroups[0];
-      if (!ctrl || isNaN(ctrl.dCt)) {
-        out.innerHTML = `<p style="color:var(--rose);font-size:0.86rem;">Enter valid numeric Ct values for the control condition.</p>`;
-        return;
-      }
-
-      const results = parsedGroups.map(g => {
-        if (isNaN(g.dCt)) return { ...g, ddCt: NaN, fold: 0, foldLow: 0, foldHigh: 0 };
-        const ddCt = g.dCt - ctrl.dCt;
-        const fold = Math.pow(2, -ddCt);
-        const foldHigh = Math.pow(2, -(ddCt - g.dCtSD));
-        const foldLow = Math.pow(2, -(ddCt + g.dCtSD));
-        return { ...g, ddCt, fold, foldLow, foldHigh };
-      });
-
-      window._lastQPCRResults = results;
-      const maxVal = Math.max(...results.map(r => r.foldHigh || r.fold || 1), 1.2);
-      const colors = ['#C9A0C4', '#85B8C4', '#8FB393', '#E5B78A', '#D595B4', '#95C1B5'];
-      const svgW = Math.max(360, results.length * 95 + 60);
-      const barW = Math.min(54, Math.floor((svgW - 80) / results.length) - 18);
-
-      out.innerHTML = `
-        <table class="mb-3">
-          <thead>
-            <tr>
-              <th>Condition</th>
-              <th>Mean ΔCt ± SD</th>
-              <th>ΔΔCt</th>
-              <th>Fold Change (2^-ΔΔCt)</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${results.map(r => `
-              <tr>
-                <td><strong>${escapeHTML(r.name)}</strong></td>
-                <td>${isNaN(r.dCt) ? '—' : `${r.dCt.toFixed(2)} ± ${r.dCtSD.toFixed(2)}`}</td>
-                <td>${isNaN(r.ddCt) ? '—' : r.ddCt.toFixed(2)}</td>
-                <td><span class="tag-pill tag-sage">${r.fold.toFixed(2)}x</span> <span style="font-size:0.75rem;color:var(--ink-muted);">(${r.foldLow.toFixed(2)}–${r.foldHigh.toFixed(2)})</span></td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-
-        <div style="overflow-x:auto;">
-          <svg width="${svgW}" height="230" viewBox="0 0 ${svgW} 230">
-            <line x1="42" y1="180" x2="${svgW - 15}" y2="180" stroke="#6E5D6B" stroke-width="1.5"/>
-            <line x1="42" y1="20" x2="42" y2="180" stroke="#6E5D6B" stroke-width="1.5"/>
-            <text x="14" y="100" transform="rotate(-90 14,100)" text-anchor="middle" font-size="11" fill="#6E5D6B">Fold Change (2^-ΔΔCt)</text>
-            ${results.map((r, i) => {
-              const slotW = (svgW - 65) / results.length;
-              const cx = 50 + i * slotW + slotW / 2;
-              const h = (r.fold / maxVal) * 145;
-              const y = 180 - h;
-              const yHigh = 180 - ((r.foldHigh / maxVal) * 145);
-              const yLow = 180 - ((r.foldLow / maxVal) * 145);
-              const fill = colors[i % colors.length];
-              return `
-                <rect x="${cx - barW / 2}" y="${y}" width="${barW}" height="${Math.max(2, h)}" rx="6" fill="${fill}" stroke="#4A2545" stroke-width="1.4"/>
-                ${r.dCtSD > 0 ? `
-                  <line x1="${cx}" y1="${Math.max(12, yHigh)}" x2="${cx}" y2="${Math.min(180, yLow)}" stroke="#2B1B28" stroke-width="1.4"/>
-                  <line x1="${cx - 6}" y1="${Math.max(12, yHigh)}" x2="${cx + 6}" y2="${Math.max(12, yHigh)}" stroke="#2B1B28" stroke-width="1.4"/>
-                  <line x1="${cx - 6}" y1="${Math.min(180, yLow)}" x2="${cx + 6}" y2="${Math.min(180, yLow)}" stroke="#2B1B28" stroke-width="1.4"/>
-                ` : ''}
-                <text x="${cx}" y="${Math.max(14, yHigh - 5)}" text-anchor="middle" font-size="11" font-weight="700" fill="#2B1B28">${r.fold.toFixed(2)}x</text>
-                <text x="${cx}" y="198" text-anchor="middle" font-size="11" fill="#2B1B28">${escapeHTML(r.name.slice(0, 14))}</text>
-              `;
-            }).join('')}
-          </svg>
+      document.getElementById('qpcr-output').innerHTML = `
+        <div class="flex-gap mb-3">
+          <span class="tag-pill">Control ΔCt: ${dCtCtrl.toFixed(2)}</span>
+          <span class="tag-pill">Treated ΔCt: ${dCtTreat.toFixed(2)}</span>
+          <span class="tag-pill tag-sage">Fold Change: ${fold.toFixed(2)}x</span>
         </div>
+        <svg width="100%" height="210" viewBox="0 0 340 210">
+          <line x1="40" y1="170" x2="310" y2="170" stroke="#6E5D6B" stroke-width="1.5"/>
+          <line x1="40" y1="20" x2="40" y2="170" stroke="#6E5D6B" stroke-width="1.5"/>
+          <!-- Control Bar -->
+          <rect x="85" y="${170 - (1 / barMax) * 130}" width="65" height="${(1 / barMax) * 130}" rx="6" fill="#C9A0C4" stroke="#4A2545" stroke-width="1.5"/>
+          <text x="117" y="190" text-anchor="middle" font-size="12" fill="#2B1B28">Control (1.0)</text>
+          <!-- Treated Bar -->
+          <rect x="195" y="${170 - (fold / barMax) * 130}" width="65" height="${(fold / barMax) * 130}" rx="6" fill="#85B8C4" stroke="#4A2545" stroke-width="1.5"/>
+          <text x="227" y="190" text-anchor="middle" font-size="12" fill="#2B1B28">Treated (${fold.toFixed(2)}x)</text>
+        </svg>
       `;
     }
 
-    function exportQPCRCSV() {
-      const st = window._qpcrState;
-      const rows = window._lastQPCRResults || [];
-      if (!rows.length) return;
-      const lines = [
-        `Target Gene,${st.targetGene},Reference Gene,${st.refGene}`,
-        'Condition,Mean Target Ct,Mean Ref Ct,Mean dCt,dCt SD,ddCt,Fold Change (2^-ddCt),Range Low,Range High'
-      ];
-      rows.forEach(r => {
-        lines.push(`"${r.name}",${r.tMean.toFixed(3)},${r.rMean.toFixed(3)},${r.dCt.toFixed(3)},${r.dCtSD.toFixed(3)},${r.ddCt.toFixed(3)},${r.fold.toFixed(3)},${r.foldLow.toFixed(3)},${r.foldHigh.toFixed(3)}`);
-      });
-      const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `qpcr-${st.targetGene || 'analysis'}-${todayISO()}.csv`;
-      a.click();
-    }
     function calcSeeding() {
       const stock = +document.getElementById('seed-stock').value || 1;
       const target = +document.getElementById('seed-target').value || 0;
