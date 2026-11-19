@@ -3043,111 +3043,120 @@
 
     const _origRenderAll = renderAll;
     renderAll = function() { _origRenderAll(); renderLiterature(); };
- /* ==================== PROJECTS HUB MODULE ==================== */
+/* ==================== PROJECTS HUB MODULE ==================== */
     if (!appState.projects) appState.projects = [];
-    let selectedProjectName = null;
-
-    function getAllProjectNames() {
-      const set = new Set(appState.projects.map(p => p.name));
-      appState.experiments.forEach(e => { if (e.project) set.add(e.project); });
-      appState.protocols.forEach(p => { if (p.tag) set.add(p.tag); });
-      appState.notes.forEach(n => { if (n.tag) set.add(n.tag); });
-      if (appState.papers) appState.papers.forEach(p => { if (p.project) set.add(p.project); });
-      return Array.from(set);
-    }
+    let selectedProjectId = null;
 
     function renderProjects() {
       const grid = document.getElementById('projects-cards-grid');
       const detail = document.getElementById('project-detail-workspace');
       if (!grid || !detail) return;
 
-      const names = getAllProjectNames();
-      if (names.length === 0) {
+      if (appState.projects.length === 0) {
         grid.innerHTML = '';
         detail.innerHTML = `
           <div class="empty-state">
             <h3 class="serif" style="color:var(--plum-dark);">No Projects Created Yet</h3>
-            <p>Create a project workspace to group related protocols, active runs, notebook entries, and papers together.</p>
+            <p>Create a project (e.g., Liver Cholestasis, KFDV NS5) and link your existing protocols, experiments, notes, and papers to it.</p>
             <button class="btn btn-plum" onclick="openNewProjectModal()">+ Create First Project</button>
           </div>`;
         return;
       }
 
-      if (!selectedProjectName || !names.includes(selectedProjectName)) {
-        selectedProjectName = names[0];
-      }
+      const activeProj = appState.projects.find(p => p.id === selectedProjectId) || appState.projects[0];
+      selectedProjectId = activeProj.id;
 
-      grid.innerHTML = names.map(name => {
-        const meta = appState.projects.find(p => p.name === name) || { name, description: '', status: 'Active' };
-        const expCount = appState.experiments.filter(e => e.project === name).length;
-        const protoCount = appState.protocols.filter(p => p.tag === name).length;
-        const noteCount = appState.notes.filter(n => n.tag === name).length;
+      // Ensure link arrays exist
+      activeProj.expIds = activeProj.expIds || [];
+      activeProj.protoIds = activeProj.protoIds || [];
+      activeProj.noteIds = activeProj.noteIds || [];
+      activeProj.paperIds = activeProj.paperIds || [];
+
+      grid.innerHTML = appState.projects.map(proj => {
+        const eCount = (proj.expIds || []).filter(id => appState.experiments.some(e => e.id === id)).length;
+        const pCount = (proj.protoIds || []).filter(id => appState.protocols.some(p => p.id === id)).length;
+        const nCount = (proj.noteIds || []).filter(id => appState.notes.some(n => n.id === id)).length;
 
         return `
-          <div class="card" style="cursor:pointer;${name === selectedProjectName ? 'border:2px solid var(--plum-accent);' : ''}"
-               onclick="selectedProjectName='${escapeHTML(name)}';renderProjects()">
+          <div class="card" style="cursor:pointer;${proj.id === activeProj.id ? 'border:2px solid var(--plum-accent);' : ''}"
+               onclick="selectedProjectId='${proj.id}';renderProjects()">
             <div class="flex-between">
-              <h3 class="serif" style="font-size:1.2rem;color:var(--plum-dark);">${escapeHTML(name)}</h3>
-              <span class="tag-pill tag-sage">${escapeHTML(meta.status || 'Active')}</span>
+              <h3 class="serif" style="font-size:1.2rem;color:var(--plum-dark);">${escapeHTML(proj.name)}</h3>
+              <span class="tag-pill tag-sage">${escapeHTML(proj.status || 'Active')}</span>
             </div>
-            ${meta.description ? `<p style="font-size:0.82rem;color:var(--ink-muted);margin-top:6px;">${escapeHTML(meta.description)}</p>` : ''}
+            ${proj.description ? `<p style="font-size:0.82rem;color:var(--ink-muted);margin-top:6px;">${escapeHTML(proj.description)}</p>` : ''}
             <div class="flex-gap mt-3" style="font-size:0.78rem;">
-              <span class="tag-pill">${expCount} Runs</span>
-              <span class="tag-pill tag-sky">${protoCount} Protocols</span>
-              <span class="tag-pill tag-amber">${noteCount} Notes</span>
+              <span class="tag-pill">${eCount} Runs</span>
+              <span class="tag-pill tag-sky">${pCount} Protocols</span>
+              <span class="tag-pill tag-amber">${nCount} Notes</span>
             </div>
           </div>
         `;
       }).join('');
 
-      const exps = appState.experiments.filter(e => e.project === selectedProjectName);
-      const protos = appState.protocols.filter(p => p.tag === selectedProjectName);
-      const notes = appState.notes.filter(n => n.tag === selectedProjectName);
-      const papers = (appState.papers || []).filter(p => p.project === selectedProjectName);
+      const linkedExps = appState.experiments.filter(e => activeProj.expIds.includes(e.id));
+      const linkedProtos = appState.protocols.filter(p => activeProj.protoIds.includes(p.id));
+      const linkedNotes = appState.notes.filter(n => activeProj.noteIds.includes(n.id));
+      const linkedPapers = (appState.papers || []).filter(p => activeProj.paperIds.includes(p.id));
 
       detail.innerHTML = `
         <div class="card">
-          <div class="flex-between mb-3">
-            <h3 class="serif" style="font-size:1.35rem;color:var(--plum-dark);">Project: ${escapeHTML(selectedProjectName)}</h3>
+          <div class="flex-between mb-3" style="flex-wrap:wrap;">
+            <div>
+              <h3 class="serif" style="font-size:1.35rem;color:var(--plum-dark);">Project: ${escapeHTML(activeProj.name)}</h3>
+              ${activeProj.description ? `<div style="font-size:0.84rem;color:var(--ink-muted);margin-top:2px;">${escapeHTML(activeProj.description)}</div>` : ''}
+            </div>
             <div class="flex-gap">
-              <button class="btn btn-sm" onclick="quickStartInProject('${escapeHTML(selectedProjectName)}', 'protocol')">+ Protocol in Project</button>
-              <button class="btn btn-plum btn-sm" onclick="quickStartInProject('${escapeHTML(selectedProjectName)}', 'experiment')">+ Experiment in Project</button>
+              <button class="btn btn-plum btn-sm" onclick="openLinkToProjectModal('${activeProj.id}')">+ Link Existing Item</button>
+              <button class="btn btn-sm" style="color:var(--rose);" onclick="deleteProject('${activeProj.id}')">Delete Project</button>
             </div>
           </div>
 
           <div class="grid-2">
             <div class="step-card">
-              <strong style="color:var(--plum-dark);">Linked Experiments (${exps.length})</strong>
-              ${exps.length === 0 ? `<p style="font-size:0.83rem;color:var(--ink-muted);margin-top:6px;">None yet.</p>` : exps.map(e => `
-                <div class="exp-mini-item mt-2" onclick="selectedExperimentId='${e.id}';switchView('experiments')">
-                  <div class="flex-between"><strong>${escapeHTML(e.title)}</strong><span class="tag-pill">${e.status}</span></div>
+              <strong style="color:var(--plum-dark);">Linked Experiments (${linkedExps.length})</strong>
+              ${linkedExps.length === 0 ? `<p style="font-size:0.83rem;color:var(--ink-muted);margin-top:6px;">None linked yet.</p>` : linkedExps.map(e => `
+                <div class="exp-mini-item mt-2 flex-between">
+                  <div onclick="selectedExperimentId='${e.id}';switchView('experiments')" style="flex:1;">
+                    <strong>${escapeHTML(e.title)}</strong> <span class="tag-pill" style="margin-left:6px;">${e.status}</span>
+                  </div>
+                  <button class="btn btn-sm" onclick="unlinkFromProject('${activeProj.id}', 'expIds', '${e.id}')" title="Unlink">✕</button>
                 </div>
               `).join('')}
             </div>
 
             <div class="step-card">
-              <strong style="color:var(--plum-dark);">Linked Protocols (${protos.length})</strong>
-              ${protos.length === 0 ? `<p style="font-size:0.83rem;color:var(--ink-muted);margin-top:6px;">None yet.</p>` : protos.map(p => `
-                <div class="exp-mini-item mt-2" onclick="selectedProtocolId='${p.id}';switchView('protocols')">
-                  <div class="flex-between"><strong>${escapeHTML(p.title)}</strong><span>${p.nodes.length} steps</span></div>
+              <strong style="color:var(--plum-dark);">Linked Protocols (${linkedProtos.length})</strong>
+              ${linkedProtos.length === 0 ? `<p style="font-size:0.83rem;color:var(--ink-muted);margin-top:6px;">None linked yet.</p>` : linkedProtos.map(p => `
+                <div class="exp-mini-item mt-2 flex-between">
+                  <div onclick="selectedProtocolId='${p.id}';switchView('protocols')" style="flex:1;">
+                    <strong>${escapeHTML(p.title)}</strong> <span style="font-size:0.76rem;color:var(--ink-muted);">(${p.nodes.length} steps)</span>
+                  </div>
+                  <button class="btn btn-sm" onclick="unlinkFromProject('${activeProj.id}', 'protoIds', '${p.id}')" title="Unlink">✕</button>
                 </div>
               `).join('')}
             </div>
 
             <div class="step-card">
-              <strong style="color:var(--plum-dark);">Notebook Entries (${notes.length})</strong>
-              ${notes.length === 0 ? `<p style="font-size:0.83rem;color:var(--ink-muted);margin-top:6px;">None yet.</p>` : notes.map(n => `
-                <div class="exp-mini-item mt-2" onclick="selectedNoteId='${n.id}';switchView('notebook')">
-                  <strong>${escapeHTML(n.title)}</strong> <span style="font-size:0.76rem;color:var(--ink-muted);">(${n.date})</span>
+              <strong style="color:var(--plum-dark);">Linked Notebook Entries (${linkedNotes.length})</strong>
+              ${linkedNotes.length === 0 ? `<p style="font-size:0.83rem;color:var(--ink-muted);margin-top:6px;">None linked yet.</p>` : linkedNotes.map(n => `
+                <div class="exp-mini-item mt-2 flex-between">
+                  <div onclick="selectedNoteId='${n.id}';switchView('notebook')" style="flex:1;">
+                    <strong>${escapeHTML(n.title)}</strong> <span style="font-size:0.76rem;color:var(--ink-muted);">(${n.date})</span>
+                  </div>
+                  <button class="btn btn-sm" onclick="unlinkFromProject('${activeProj.id}', 'noteIds', '${n.id}')" title="Unlink">✕</button>
                 </div>
               `).join('')}
             </div>
 
             <div class="step-card">
-              <strong style="color:var(--plum-dark);">Reference Papers (${papers.length})</strong>
-              ${papers.length === 0 ? `<p style="font-size:0.83rem;color:var(--ink-muted);margin-top:6px;">None yet.</p>` : papers.map(p => `
-                <div class="exp-mini-item mt-2" onclick="selectedPaperId='${p.id}';switchView('literature')">
-                  <strong>${escapeHTML(p.title)}</strong>
+              <strong style="color:var(--plum-dark);">Linked Reference Papers (${linkedPapers.length})</strong>
+              ${linkedPapers.length === 0 ? `<p style="font-size:0.83rem;color:var(--ink-muted);margin-top:6px;">None linked yet.</p>` : linkedPapers.map(p => `
+                <div class="exp-mini-item mt-2 flex-between">
+                  <div onclick="selectedPaperId='${p.id}';switchView('literature')" style="flex:1;">
+                    <strong>${escapeHTML(p.title)}</strong>
+                  </div>
+                  <button class="btn btn-sm" onclick="unlinkFromProject('${activeProj.id}', 'paperIds', '${p.id}')" title="Unlink">✕</button>
                 </div>
               `).join('')}
             </div>
@@ -3159,8 +3168,8 @@
     function openNewProjectModal() {
       openModal(`
         <h3 class="serif mb-2" style="color:var(--plum-dark);">Create Research Project</h3>
-        <label>Project Name / Short Code</label>
-        <input type="text" id="prj-name-in" class="input mb-2" placeholder="e.g., KFDV NS5, HBV NTCP, Review Paper" />
+        <label>Project Name</label>
+        <input type="text" id="prj-name-in" class="input mb-2" placeholder="e.g., Liver Cholestasis, KFDV NS5" />
         <label>Objective / Summary (optional)</label>
         <textarea id="prj-desc-in" rows="3" class="input mb-2" placeholder="Brief goal of this project..."></textarea>
         <label>Status</label>
@@ -3181,27 +3190,91 @@
       const name = document.getElementById('prj-name-in').value.trim();
       if (!name) return;
       if (!appState.projects) appState.projects = [];
-      appState.projects.unshift({
+      const proj = {
         id: String(Date.now()),
         name,
         description: document.getElementById('prj-desc-in').value.trim(),
-        status: document.getElementById('prj-stat-in').value
-      });
-      selectedProjectName = name;
+        status: document.getElementById('prj-stat-in').value,
+        expIds: [],
+        protoIds: [],
+        noteIds: [],
+        paperIds: []
+      };
+      appState.projects.unshift(proj);
+      selectedProjectId = proj.id;
       saveState();
       logActivity('Project', `Created project "${name}"`);
       closeModal();
       renderProjects();
     }
 
-    function quickStartInProject(projName, kind) {
-      if (kind === 'protocol') {
-        openNewProtocolModal();
-        setTimeout(() => { const el = document.getElementById('proto-tag-in'); if (el) el.value = projName; }, 30);
+    function openLinkToProjectModal(projId) {
+      const proj = appState.projects.find(p => p.id === projId);
+      if (!proj) return;
+
+      openModal(`
+        <h3 class="serif mb-2" style="color:var(--plum-dark);">Link Existing Item to "${escapeHTML(proj.name)}"</h3>
+        <label>Item Type</label>
+        <select id="link-type-sel" class="input mb-2" onchange="populateLinkItemDropdown('${projId}')">
+          <option value="expIds">Experiment Run</option>
+          <option value="protoIds">Flowchart Protocol</option>
+          <option value="noteIds">Lab Notebook Entry</option>
+          <option value="paperIds">Reference Paper</option>
+        </select>
+        <label>Select Item</label>
+        <select id="link-item-sel" class="input mb-3"></select>
+        <div class="flex-gap" style="justify-content:flex-end;">
+          <button class="btn" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-plum" onclick="confirmLinkToProject('${projId}')">Link to Project</button>
+        </div>
+      `);
+      populateLinkItemDropdown(projId);
+    }
+
+    function populateLinkItemDropdown(projId) {
+      const type = document.getElementById('link-type-sel').value;
+      const itemSel = document.getElementById('link-item-sel');
+      let sourceList = [];
+      if (type === 'expIds') sourceList = appState.experiments;
+      else if (type === 'protoIds') sourceList = appState.protocols;
+      else if (type === 'noteIds') sourceList = appState.notes;
+      else if (type === 'paperIds') sourceList = appState.papers || [];
+
+      if (sourceList.length === 0) {
+        itemSel.innerHTML = `<option value="">-- No items created in this tab yet --</option>`;
       } else {
-        openNewExperimentModal();
-        setTimeout(() => { const el = document.getElementById('exp-proj-in'); if (el) el.value = projName; }, 30);
+        itemSel.innerHTML = sourceList.map(item => `<option value="${item.id}">${escapeHTML(item.title)}</option>`).join('');
       }
+    }
+
+    function confirmLinkToProject(projId) {
+      const proj = appState.projects.find(p => p.id === projId);
+      const type = document.getElementById('link-type-sel').value;
+      const itemId = document.getElementById('link-item-sel').value;
+      if (!proj || !itemId) return;
+
+      if (!proj[type]) proj[type] = [];
+      if (!proj[type].includes(itemId)) {
+        proj[type].push(itemId);
+        saveState();
+      }
+      closeModal();
+      renderProjects();
+    }
+
+    function unlinkFromProject(projId, type, itemId) {
+      const proj = appState.projects.find(p => p.id === projId);
+      if (!proj || !proj[type]) return;
+      proj[type] = proj[type].filter(id => id !== itemId);
+      saveState();
+      renderProjects();
+    }
+
+    function deleteProject(projId) {
+      appState.projects = appState.projects.filter(p => p.id !== projId);
+      selectedProjectId = null;
+      saveState();
+      renderProjects();
     }
 
     const _prevRenderAllProj = renderAll;
