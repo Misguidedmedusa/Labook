@@ -1590,6 +1590,8 @@
       const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
       document.getElementById('cal-month-label').textContent = `${monthNames[calMonth]} ${calYear}`;
 
+      if (!appState.reminders) appState.reminders = [];
+
       const firstDay = new Date(calYear, calMonth, 1).getDay();
       const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
       const todayStr = todayISO();
@@ -1603,19 +1605,94 @@
         const hasExp = appState.experiments.some(e => e.date === iso);
         const hasCell = appState.cellLines.some(c => c.logs && c.logs.some(l => l.date === iso));
         const hasNote = appState.notes.some(n => n.date === iso);
+        const hasRem = appState.reminders.some(r => r.date === iso);
 
         cells += `
-          <div class="cal-day ${iso === todayStr ? 'today' : ''}" title="${iso}">
+          <div class="cal-day ${iso === todayStr ? 'today' : ''}" title="Click to view or add reminder (${iso})" onclick="openCalendarDateModal('${iso}')">
             <span>${d}</span>
             <div class="cal-dots">
               ${hasExp ? '<span class="cal-dot" style="background:#6D3B65;"></span>' : ''}
               ${hasCell ? '<span class="cal-dot" style="background:#6F9173;"></span>' : ''}
-              ${hasNote ? '<span class="cal-dot" style="background:#C48234;"></span>' : ''}
+              ${(hasNote || hasRem) ? '<span class="cal-dot" style="background:#C48234;"></span>' : ''}
             </div>
           </div>
         `;
       }
       document.getElementById('calendar-grid').innerHTML = heads + cells;
+    }
+
+    function openCalendarDateModal(isoDate) {
+      if (!appState.reminders) appState.reminders = [];
+      const dayReminders = appState.reminders.filter(r => r.date === isoDate);
+      const dayExps = appState.experiments.filter(e => e.date === isoDate);
+      const dayNotes = appState.notes.filter(n => n.date === isoDate);
+
+      openModal(`
+        <h3 class="serif mb-2" style="color:var(--plum-dark);">Schedule & Notes — ${isoDate}</h3>
+
+        ${dayExps.length > 0 ? `
+          <div class="mb-2">
+            <label>Experiments Logged</label>
+            ${dayExps.map(e => `<div class="step-card" style="padding:8px 12px;margin-bottom:6px;"><span class="tag-pill">Run</span> <strong>${escapeHTML(e.title)}</strong></div>`).join('')}
+          </div>
+        ` : ''}
+
+        ${dayNotes.length > 0 ? `
+          <div class="mb-2">
+            <label>Notebook Entries</label>
+            ${dayNotes.map(n => `<div class="step-card" style="padding:8px 12px;margin-bottom:6px;"><span class="tag-pill tag-sage">Note</span> <strong>${escapeHTML(n.title)}</strong></div>`).join('')}
+          </div>
+        ` : ''}
+
+        <div class="mb-3">
+          <label>Reminders & Date Notes (${dayReminders.length})</label>
+          ${dayReminders.length === 0 ? `<p style="font-size:0.83rem;color:var(--ink-muted);margin:6px 0;">No reminders set for this date yet.</p>` : dayReminders.map(r => `
+            <div class="step-card flex-between" style="padding:8px 12px;margin-bottom:6px;background:#FBF0DF;border-color:#E8CFA8;">
+              <div>
+                ${r.time ? `<span class="tag-pill tag-amber" style="margin-right:6px;">${escapeHTML(r.time)}</span>` : ''}
+                <strong>${escapeHTML(r.text)}</strong>
+              </div>
+              <button class="btn btn-sm" style="color:var(--rose);" onclick="deleteCalendarReminder('${r.id}', '${isoDate}')">✕</button>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="step-card" style="background:#FAF5EE;">
+          <label>Add New Reminder / Bench Note</label>
+          <div class="grid-2 mb-2">
+            <input type="text" id="cal-rem-text" class="input" placeholder="e.g., Passage HEK293T, Harvest lysate..." onkeydown="if(event.key==='Enter') saveCalendarReminder('${isoDate}')" />
+            <input type="time" id="cal-rem-time" class="input" />
+          </div>
+          <div class="flex-gap" style="justify-content:flex-end;">
+            <button class="btn" onclick="closeModal()">Close</button>
+            <button class="btn btn-plum" onclick="saveCalendarReminder('${isoDate}')">+ Save Reminder</button>
+          </div>
+        </div>
+      `);
+    }
+
+    function saveCalendarReminder(isoDate) {
+      const text = document.getElementById('cal-rem-text').value.trim();
+      if (!text) return;
+      const time = document.getElementById('cal-rem-time').value;
+      if (!appState.reminders) appState.reminders = [];
+      appState.reminders.push({
+        id: String(Date.now()),
+        date: isoDate,
+        time,
+        text
+      });
+      saveState();
+      logActivity('Calendar', `Reminder on ${isoDate}: "${text}"`);
+      renderCalendar();
+      openCalendarDateModal(isoDate);
+    }
+
+    function deleteCalendarReminder(remId, isoDate) {
+      appState.reminders = (appState.reminders || []).filter(r => r.id !== remId);
+      saveState();
+      renderCalendar();
+      openCalendarDateModal(isoDate);
     }
 
     /* ==================== 2. PROTOCOLS FLOWCHART STUDIO ==================== */
