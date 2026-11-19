@@ -2783,7 +2783,7 @@ async function runAIAssistant() {
         feed.innerHTML += `
           <div class="ai-msg-box suggestion">
             <span class="tag-pill tag-amber">Setup Required</span>
-            Please add your Gemini API key in <strong>Settings & Backup</strong> first.
+            Paste your OpenRouter API key (<strong>sk-or-v1-...</strong>) in <strong>Settings & Backup</strong> first.
           </div>`;
         return;
       }
@@ -2801,97 +2801,70 @@ async function runAIAssistant() {
 
       let systemInstruction = 'You are a scientific molecular biology lab assistant. Always distinguish recorded lab data from AI-generated suggestions.';
       if (currentAIMode === 'flowchart') {
-        systemInstruction = 'Convert the user protocol text into valid JSON ONLY (no markdown fences) with format: {"title":"Protocol Title","tag":"Category","nodes":[{"type":"action","title":"Step title","details":"Params","yesBranch":"","noBranch":"","timerSec":0,"reagents":""}]}';
+        systemInstruction = 'Convert the user protocol text into valid JSON ONLY (no markdown fences, no commentary) with exact schema: {"title":"Protocol Title","tag":"Category","nodes":[{"type":"action","title":"Step title","details":"Params","yesBranch":"","noBranch":"","timerSec":0,"reagents":""}]}';
       } else if (currentAIMode === 'recap') {
         systemInstruction = 'Compile a clean, objective scientific recap of the user experiments and observations provided in context.';
       }
 
-      feed.innerHTML += `<div class="ai-msg-box"><span class="tag-pill">YOUR REQUEST</span>\n${escapeHTML(userText || 'Generate recap of current experiment')}</div>`;
+      feed.innerHTML += `<div class="ai-msg-box"><span class="tag-pill">YOUR REQUEST</span>\n${escapeHTML(userText || 'Generate recap')}</div>`;
       const loadId = 'ai-wait-' + Date.now();
-      feed.innerHTML += `<div id="${loadId}" class="ai-msg-box suggestion"><span class="tag-pill">THINKING...</span>\nAuto-detecting active Gemini model...</div>`;
+      feed.innerHTML += `<div id="${loadId}" class="ai-msg-box suggestion"><span class="tag-pill">THINKING...</span>\nAnalyzing your lab records...</div>`;
       feed.scrollTop = feed.scrollHeight;
-
-      let data = null;
-      let lastError = '';
 
       try {
-        const listRes = await fetch('https://generativelanguage.googleapis.com/v1beta/models', {
-          headers: { 'x-goog-api-key': apiKey }
+        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+            'HTTP-Referer': window.location.origin,
+            'X-Title': 'Labook Research Workspace'
+          },
+          body: JSON.stringify({
+            model: 'openrouter/free',
+            temperature: 0.3,
+            messages: [
+              { role: 'system', content: systemInstruction },
+              { role: 'user', content: `Recorded Lab Data Context:\n${labContext}\n\nUser Input:\n${userText}` }
+            ]
+          })
         });
-        const listJson = await listRes.json();
+        const data = await res.json();
+        document.getElementById(loadId)?.remove();
 
-        if (listJson.error) {
-          lastError = listJson.error.message;
-        } else {
-          const validModels = (listJson.models || [])
-            .filter(m => (m.supportedGenerationMethods || []).includes('generateContent') && m.name.includes('gemini'))
-            .map(m => m.name.replace('models/', ''));
-
-          validModels.sort((a, b) => (b.includes('flash') ? 1 : 0) - (a.includes('flash') ? 1 : 0));
-
-          for (const model of validModels) {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'x-goog-api-key': apiKey
-              },
-              body: JSON.stringify({
-                contents: [{
-                  parts: [{ text: `${systemInstruction}\n\nRecorded Lab Data Context:\n${labContext}\n\nUser Input:\n${userText}` }]
-                }]
-              })
-            });
-            const json = await res.json();
-            if (json.error) {
-              lastError = `${model}: ${json.error.message}`;
-              continue;
-            }
-            if (json.candidates && json.candidates[0]) {
-              data = json;
-              break;
-            }
-          }
-          if (!data && !lastError) {
-            lastError = 'No active models found for this key: ' + validModels.join(', ');
-          }
+        if (data.error) {
+          throw new Error(data.error.message || JSON.stringify(data.error));
         }
-      } catch (e) {
-        lastError = e.message;
-      }
 
-      document.getElementById(loadId)?.remove();
+        const reply = data?.choices?.[0]?.message?.content || 'No response returned.';
 
-      if (!data) {
-        feed.innerHTML += `<div class="ai-msg-box suggestion"><span class="tag-pill tag-rose">API Error</span>\n${escapeHTML(lastError || 'Unknown error. Check your API key in Settings.')}</div>`;
+        if (currentAIMode === 'flowchart') {
+          try {
+            const cleanJson = reply.replace(/```json|```/g, '').trim();
+            const parsed = JSON.parse(cleanJson);
+            const newProto = {
+              id: String(Date.now()),
+              title: parsed.title || 'AI Generated Protocol',
+              tag: parsed.tag || 'General',
+              nodes: (parsed.nodes || []).map(n => ({ ...n, id: String(Date.now() + Math.random()), image: '' }))
+            };
+            appState.protocols.unshift(newProto);
+            selectedProtocolId = newProto.id;
+            saveState();
+            renderProtocols();
+            feed.innerHTML += `<div class="ai-msg-box suggestion"><span class="tag-pill tag-sage">FLOWCHART CREATED</span>\nCreated "${escapeHTML(newProto.title)}" with ${newProto.nodes.length} nodes on your Protocols canvas!</div>`;
+            feed.scrollTop = feed.scrollHeight;
+            return;
+          } catch (err) { /* Fall through to show text reply */ }
+        }
+
+        feed.innerHTML += `<div class="ai-msg-box suggestion"><span class="tag-pill">AI SUGGESTION</span>\n${escapeHTML(reply)}</div>`;
         feed.scrollTop = feed.scrollHeight;
-        return;
+      } catch (err) {
+        document.getElementById(loadId)?.remove();
+        feed.innerHTML += `<div class="ai-msg-box suggestion"><span class="tag-pill tag-rose">Error</span>\n${escapeHTML(err.message)}</div>`;
+        feed.scrollTop = feed.scrollHeight;
       }
-
-      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Empty response.';
-
-      if (currentAIMode === 'flowchart') {
-        try {
-          const cleanJson = reply.replace(/```json|```/g, '').trim();
-          const parsed = JSON.parse(cleanJson);
-          const newProto = {
-            id: String(Date.now()),
-            title: parsed.title || 'AI Generated Protocol',
-            tag: parsed.tag || 'General',
-            nodes: (parsed.nodes || []).map(n => ({ ...n, id: String(Date.now() + Math.random()), image: '' }))
-          };
-          appState.protocols.unshift(newProto);
-          selectedProtocolId = newProto.id;
-          saveState();
-          renderProtocols();
-          feed.innerHTML += `<div class="ai-msg-box suggestion"><span class="tag-pill tag-sage">FLOWCHART CREATED</span>\nCreated "${escapeHTML(newProto.title)}" with ${newProto.nodes.length} nodes on your Protocols canvas!</div>`;
-          feed.scrollTop = feed.scrollHeight;
-          return;
-        } catch (err) { /* Fall through to display text */ }
-      }
-
-      feed.innerHTML += `<div class="ai-msg-box suggestion"><span class="tag-pill">AI SUGGESTION</span>\n${escapeHTML(reply)}</div>`;
-      feed.scrollTop = feed.scrollHeight;
     }
 
     /* ==================== SETTINGS & BACKUP ==================== */
