@@ -2773,99 +2773,135 @@
       };
       document.getElementById('ai-mode-hint').textContent = hints[mode] || '';
     }
-
 async function runAIAssistant() {
-      const apiKey = (localStorage.getItem('labook_gemini_key') || '').trim();
       const promptIn = document.getElementById('ai-prompt-input');
       const userText = promptIn.value.trim();
       const feed = document.getElementById('ai-feed');
 
-      if (!apiKey) {
-        feed.innerHTML += `
-          <div class="ai-msg-box suggestion">
-            <span class="tag-pill tag-amber">Setup Required</span>
-            Paste your OpenRouter API key (<strong>sk-or-v1-...</strong>) in <strong>Settings & Backup</strong> first.
-          </div>`;
-        return;
-      }
-
       if (!userText && currentAIMode !== 'recap') return;
       promptIn.value = '';
 
-      const labContext = JSON.stringify({
-        projects: (appState.projects || []).map(p => ({ name: p.name, status: p.status, description: p.description })),
-        protocols: appState.protocols.map(p => ({ title: p.title, tag: p.tag, steps: p.nodes.map(n => n.title) })),
-        experiments: appState.experiments.slice(0, 5).map(e => ({ title: e.title, project: e.project, status: e.status, steps: (e.steps || []).map(s => ({ title: s.title, done: s.done, note: s.note })) })),
-        notes: appState.notes.slice(0, 5).map(n => ({ title: n.title, date: n.date, body: n.body })),
-        reagents: appState.reagents.map(r => ({ name: r.name, qty: r.qty, location: r.location }))
+      feed.innerHTML += `<div class="ai-msg-box"><span class="tag-pill">YOUR REQUEST</span>\n${escapeHTML(userText || 'Generate Experiment Recap')}</div>`;
+
+      // MODE 1: OFFLINE TEXT -> FLOWCHART
+      if (currentAIMode === 'flowchart') {
+        const lines = userText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        const nodes = [];
+        let title = 'Quick Flowchart Protocol';
+
+        lines.forEach((line, idx) => {
+          if (idx === 0 && !/^(\d+[\.\)]|[-*•]|STEP|DECISION|HOLD)/i.test(line) && lines.length > 1) {
+            title = line.replace(/^TITLE\s*:/i, '').trim();
+            return;
+          }
+          if (/^(if|check|verify|is\s)/i.test(line) || line.includes('?')) {
+            nodes.push({
+              id: String(Date.now() + Math.random()),
+              type: 'decision',
+              title: line.replace(/^(\d+[\.\)]\s*|[-*•]\s*)/, ''),
+              details: '',
+              yesBranch: 'Proceed to next step',
+              noBranch: 'Repeat / Troubleshoot',
+              timerSec: 0,
+              reagents: '',
+              image: ''
+            });
+          } else {
+            const clean = line.replace(/^(\d+[\.\)]\s*|[-*•]\s*)/, '');
+            const minMatch = clean.match(/(\d+)\s*(min|mins|minutes)/i);
+            nodes.push({
+              id: String(Date.now() + Math.random()),
+              type: /store|freeze|-80|-20|hold|overnight/i.test(clean) ? 'hold' : 'action',
+              title: clean,
+              details: '',
+              yesBranch: '',
+              noBranch: '',
+              timerSec: minMatch ? parseInt(minMatch[1], 10) * 60 : 0,
+              reagents: '',
+              image: ''
+            });
+          }
+        });
+
+        if (nodes.length > 0) {
+          const newProto = { id: String(Date.now()), title, tag: 'General', versions: [], paperIds: [], nodes };
+          appState.protocols.unshift(newProto);
+          selectedProtocolId = newProto.id;
+          saveState();
+          renderProtocols();
+          feed.innerHTML += `<div class="ai-msg-box suggestion"><span class="tag-pill tag-sage">OFFLINE FLOWCHART CREATED</span>\nBuilt "${escapeHTML(title)}" with ${nodes.length} steps directly on your Protocols canvas!</div>`;
+        } else {
+          feed.innerHTML += `<div class="ai-msg-box suggestion">Paste 2 or more numbered steps to auto-build a flowchart.</div>`;
+        }
+        feed.scrollTop = feed.scrollHeight;
+        return;
+      }
+
+      // MODE 2: OFFLINE EXPERIMENT RECAP
+      if (currentAIMode === 'recap') {
+        const exp = appState.experiments.find(e => e.id === selectedExperimentId) || appState.experiments[0];
+        if (!exp) {
+          feed.innerHTML += `<div class="ai-msg-box suggestion">No active or recorded experiments found yet.</div>`;
+        } else {
+          const done = exp.steps.filter(s => s.done).length;
+          const notesList = exp.steps.filter(s => s.note).map(s => `• ${s.title}: ${s.note}`).join('\n') || '• No step observations logged yet.';
+          const recapText = `Experiment: ${exp.title} (${exp.date})\nStatus: ${exp.status.toUpperCase()} (${done}/${exp.steps.length} steps completed)\n\nLogged Step Observations:\n${notesList}`;
+          feed.innerHTML += `<div class="ai-msg-box suggestion"><span class="tag-pill tag-sage">LOCAL LAB RECAP</span>\n${escapeHTML(recapText)}</div>`;
+        }
+        feed.scrollTop = feed.scrollHeight;
+        return;
+      }
+
+      // MODE 3: ASK MY LAB & TROUBLESHOOT (100% LOCAL KEYWORD SEARCH + COPYABLE PROMPT)
+      const words = userText.toLowerCase().split(/\W+/).filter(w => w.length > 2);
+      const matches = [];
+
+      appState.protocols.forEach(p => {
+        const text = `${p.title} ${p.tag} ${p.nodes.map(n => `${n.title} ${n.details} ${n.reagents}`).join(' ')}`.toLowerCase();
+        if (words.some(w => text.includes(w))) {
+          matches.push(`[Protocol] ${p.title} (${p.nodes.length} steps)`);
+        }
       });
 
-      let systemInstruction = 'You are a scientific molecular biology lab assistant. Always distinguish recorded lab data from AI-generated suggestions.';
-      if (currentAIMode === 'flowchart') {
-        systemInstruction = 'Convert the user protocol text into valid JSON ONLY (no markdown fences, no commentary) with exact schema: {"title":"Protocol Title","tag":"Category","nodes":[{"type":"action","title":"Step title","details":"Params","yesBranch":"","noBranch":"","timerSec":0,"reagents":""}]}';
-      } else if (currentAIMode === 'recap') {
-        systemInstruction = 'Compile a clean, objective scientific recap of the user experiments and observations provided in context.';
-      }
+      appState.experiments.forEach(e => {
+        const text = `${e.title} ${e.project} ${e.steps.map(s => `${s.title} ${s.note}`).join(' ')}`.toLowerCase();
+        if (words.some(w => text.includes(w))) {
+          const obs = e.steps.filter(s => s.note).map(s => `${s.title}: "${s.note}"`).join('; ');
+          matches.push(`[Experiment] ${e.title} (${e.status})${obs ? ' — Notes: ' + obs : ''}`);
+        }
+      });
 
-      feed.innerHTML += `<div class="ai-msg-box"><span class="tag-pill">YOUR REQUEST</span>\n${escapeHTML(userText || 'Generate recap')}</div>`;
-      const loadId = 'ai-wait-' + Date.now();
-      feed.innerHTML += `<div id="${loadId}" class="ai-msg-box suggestion"><span class="tag-pill">THINKING...</span>\nAnalyzing your lab records...</div>`;
+      appState.notes.forEach(n => {
+        const text = `${n.title} ${n.tag} ${n.body}`.toLowerCase();
+        if (words.some(w => text.includes(w))) {
+          matches.push(`[Notebook ${n.date}] ${n.title}: ${n.body.slice(0, 140)}...`);
+        }
+      });
+
+      appState.reagents.forEach(r => {
+        const text = `${r.name} ${r.category} ${r.location}`.toLowerCase();
+        if (words.some(w => text.includes(w))) {
+          matches.push(`[Inventory] ${r.name} — Qty: ${r.qty} (${r.location || 'No location'})`);
+        }
+      });
+
+      const foundSummary = matches.length > 0
+        ? `Found ${matches.length} matching records in your local Labook:\n\n${matches.slice(0, 6).join('\n')}`
+        : `No exact keyword matches found in your local records for "${userText}".`;
+
+      const externalPrompt = `I am troubleshooting/working on: "${userText}"\n\nRelevant context from my lab notebook:\n${matches.slice(0, 5).join('\n') || 'None'}\n\nPlease suggest scientific troubleshooting steps or protocol adjustments.`;
+      window._lastLocalPrompt = externalPrompt;
+
+      feed.innerHTML += `
+        <div class="ai-msg-box suggestion">
+          <span class="tag-pill tag-sage">100% LOCAL SEARCH (OFFLINE)</span>\n${escapeHTML(foundSummary)}
+          <div class="mt-2">
+            <button class="btn btn-sm btn-plum" onclick="navigator.clipboard.writeText(window._lastLocalPrompt);this.textContent='Copied to Clipboard!';">
+              Copy Question + Lab Context for Gemini/ChatGPT
+            </button>
+          </div>
+        </div>`;
       feed.scrollTop = feed.scrollHeight;
-
-      try {
-        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`,
-            'HTTP-Referer': window.location.origin,
-            'X-Title': 'Labook Research Workspace'
-          },
-          body: JSON.stringify({
-            model: 'openrouter/free',
-            temperature: 0.3,
-            messages: [
-              { role: 'system', content: systemInstruction },
-              { role: 'user', content: `Recorded Lab Data Context:\n${labContext}\n\nUser Input:\n${userText}` }
-            ]
-          })
-        });
-        const data = await res.json();
-        document.getElementById(loadId)?.remove();
-
-        if (data.error) {
-          throw new Error(data.error.message || JSON.stringify(data.error));
-        }
-
-        const reply = data?.choices?.[0]?.message?.content || 'No response returned.';
-
-        if (currentAIMode === 'flowchart') {
-          try {
-            const cleanJson = reply.replace(/```json|```/g, '').trim();
-            const parsed = JSON.parse(cleanJson);
-            const newProto = {
-              id: String(Date.now()),
-              title: parsed.title || 'AI Generated Protocol',
-              tag: parsed.tag || 'General',
-              nodes: (parsed.nodes || []).map(n => ({ ...n, id: String(Date.now() + Math.random()), image: '' }))
-            };
-            appState.protocols.unshift(newProto);
-            selectedProtocolId = newProto.id;
-            saveState();
-            renderProtocols();
-            feed.innerHTML += `<div class="ai-msg-box suggestion"><span class="tag-pill tag-sage">FLOWCHART CREATED</span>\nCreated "${escapeHTML(newProto.title)}" with ${newProto.nodes.length} nodes on your Protocols canvas!</div>`;
-            feed.scrollTop = feed.scrollHeight;
-            return;
-          } catch (err) { /* Fall through to show text reply */ }
-        }
-
-        feed.innerHTML += `<div class="ai-msg-box suggestion"><span class="tag-pill">AI SUGGESTION</span>\n${escapeHTML(reply)}</div>`;
-        feed.scrollTop = feed.scrollHeight;
-      } catch (err) {
-        document.getElementById(loadId)?.remove();
-        feed.innerHTML += `<div class="ai-msg-box suggestion"><span class="tag-pill tag-rose">Error</span>\n${escapeHTML(err.message)}</div>`;
-        feed.scrollTop = feed.scrollHeight;
-      }
     }
 
     /* ==================== SETTINGS & BACKUP ==================== */
