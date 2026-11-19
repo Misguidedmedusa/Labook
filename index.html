@@ -2773,7 +2773,7 @@
       document.getElementById('ai-mode-hint').textContent = hints[mode] || '';
     }
 
-  async function runAIAssistant() {
+async function runAIAssistant() {
       const apiKey = (localStorage.getItem('labook_gemini_key') || '').trim();
       const promptIn = document.getElementById('ai-prompt-input');
       const userText = promptIn.value.trim();
@@ -2808,39 +2808,56 @@
 
       feed.innerHTML += `<div class="ai-msg-box"><span class="tag-pill">YOUR REQUEST</span>\n${escapeHTML(userText || 'Generate recap of current experiment')}</div>`;
       const loadId = 'ai-wait-' + Date.now();
-      feed.innerHTML += `<div id="${loadId}" class="ai-msg-box suggestion"><span class="tag-pill">THINKING...</span>\nContacting Gemini...</div>`;
+      feed.innerHTML += `<div id="${loadId}" class="ai-msg-box suggestion"><span class="tag-pill">THINKING...</span>\nAuto-detecting active Gemini model...</div>`;
       feed.scrollTop = feed.scrollHeight;
 
-      const models = ['gemini-3.8-flash', 'gemini-3.8-pro'];
       let data = null;
       let lastError = '';
 
-      for (const model of models) {
-        try {
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-goog-api-key': apiKey
-            },
-            body: JSON.stringify({
-              contents: [{
-                parts: [{ text: `${systemInstruction}\n\nRecorded Lab Data Context:\n${labContext}\n\nUser Input:\n${userText}` }]
-              }]
-            })
-          });
-          const json = await res.json();
-          if (json.error) {
-            lastError = `${model}: ${json.error.message}`;
-            continue;
+      try {
+        const listRes = await fetch('https://generativelanguage.googleapis.com/v1beta/models', {
+          headers: { 'x-goog-api-key': apiKey }
+        });
+        const listJson = await listRes.json();
+
+        if (listJson.error) {
+          lastError = listJson.error.message;
+        } else {
+          const validModels = (listJson.models || [])
+            .filter(m => (m.supportedGenerationMethods || []).includes('generateContent') && m.name.includes('gemini'))
+            .map(m => m.name.replace('models/', ''));
+
+          validModels.sort((a, b) => (b.includes('flash') ? 1 : 0) - (a.includes('flash') ? 1 : 0));
+
+          for (const model of validModels) {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-goog-api-key': apiKey
+              },
+              body: JSON.stringify({
+                contents: [{
+                  parts: [{ text: `${systemInstruction}\n\nRecorded Lab Data Context:\n${labContext}\n\nUser Input:\n${userText}` }]
+                }]
+              })
+            });
+            const json = await res.json();
+            if (json.error) {
+              lastError = `${model}: ${json.error.message}`;
+              continue;
+            }
+            if (json.candidates && json.candidates[0]) {
+              data = json;
+              break;
+            }
           }
-          if (json.candidates && json.candidates[0]) {
-            data = json;
-            break;
+          if (!data && !lastError) {
+            lastError = 'No active models found for this key: ' + validModels.join(', ');
           }
-        } catch (e) {
-          lastError = e.message;
         }
+      } catch (e) {
+        lastError = e.message;
       }
 
       document.getElementById(loadId)?.remove();
